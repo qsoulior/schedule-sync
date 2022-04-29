@@ -1,32 +1,13 @@
 <script setup lang="ts">
-import { AuthServicePopup } from "@/services/azure/authPopup";
-import type { AccountInfo } from "@azure/msal-common";
-import { ref } from "vue";
+import { useAuth } from "@/services/azure/auth";
 
-const authService = new AuthServicePopup();
-const account = ref<AccountInfo | null>();
+const { account, token, signIn, signOut, getToken } = useAuth();
 </script>
 
 <template>
-  <button
-    @click="
-      async () => {
-        await authService.signIn();
-        account = authService.getActiveAccount();
-      }
-    "
-  >
-    Войти
-  </button>
-  <button
-    @click="
-      async () => {
-        await authService.signOut();
-        account = null;
-      }
-    "
-  >
-    Выйти
-  </button>
+  <button @click="signIn">Войти</button>
+  <button @click="signOut">Выйти</button>
+  <button @click="getToken">Получить токен</button>
   <div>{{ account?.username }}</div>
+  <div>{{ token }}</div>
 </template>

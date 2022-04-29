@@ -1,39 +1,108 @@
 import {
+  msalConfig,
+  loginRequest,
+  silentRequest,
+} from "@/services/azure/authConfig";
+import {
   PublicClientApplication,
+  InteractionRequiredAuthError,
   type AccountInfo,
-  type AuthenticationResult,
+  type EndSessionPopupRequest,
+  type EndSessionRequest,
+  BrowserAuthError,
 } from "@azure/msal-browser";
-import { msalConfig } from "@/services/azure/authConfig";
+import { onMounted, ref, type Ref } from "vue";
 
-export abstract class AuthService {
-  protected readonly client: PublicClientApplication;
+interface AuthContext {
+  account: Ref<AccountInfo | null>;
+  token: Ref<string | null>;
+  signIn(): Promise<void>;
+  signOut(): Promise<void>;
+  getToken(): Promise<void>;
+}
 
-  constructor() {
-    this.client = new PublicClientApplication(msalConfig);
-  }
+export function useAuth({ popup = true } = {}): AuthContext {
+  const client = new PublicClientApplication(msalConfig);
+  const account = ref<AccountInfo | null>(client.getActiveAccount());
 
-  public getActiveAccount(): AccountInfo | null {
-    return this.client.getActiveAccount();
-  }
+  onMounted(async () => {
+    const result = await client.handleRedirectPromise();
+    if (result !== null) {
+      client.setActiveAccount(result.account);
+      account.value = result.account;
+    }
+  });
 
-  public setActiveAccount(homeId: string) {
-    const account = this.client.getAccountByHomeId(homeId);
-    if (account !== null) {
-      this.client.setActiveAccount(account);
+  async function signInPopup(): Promise<void> {
+    try {
+      const result = await client.loginPopup(loginRequest);
+      client.setActiveAccount(result.account);
+      account.value = result.account;
+    } catch (error) {
+      if (error instanceof BrowserAuthError) {
+        alert(error.errorMessage);
+      }
     }
   }
 
-  public getAccounts(): AccountInfo[] {
-    return this.client.getAllAccounts();
+  async function signInRedirect(): Promise<void> {
+    client.loginRedirect(loginRequest);
   }
 
-  protected handleResponse(response: AuthenticationResult): void {
-    if (response !== null) {
-      this.client.setActiveAccount(response.account);
+  async function signOutPopup(): Promise<void> {
+    const logoutRequest: EndSessionPopupRequest = {
+      account: account.value,
+    };
+    await client.logoutPopup(logoutRequest);
+    account.value = null;
+  }
+
+  async function signOutRedirect(): Promise<void> {
+    const logoutRequest: EndSessionRequest = {
+      account: account.value,
+    };
+    await client.logoutRedirect(logoutRequest);
+    account.value = null;
+  }
+
+  const token = ref<string | null>(null);
+  async function getTokenPopup(): Promise<void> {
+    try {
+      const res = await client.acquireTokenSilent(silentRequest);
+      token.value = res.accessToken;
+    } catch (error) {
+      if (error instanceof InteractionRequiredAuthError) {
+        try {
+          const res = await client.acquireTokenPopup(silentRequest);
+          token.value = res.accessToken;
+        } catch (error) {
+          if (error instanceof BrowserAuthError) {
+            alert(error.errorMessage);
+          }
+        }
+      } else {
+        throw error;
+      }
+    }
+  }
+  async function getTokenRedirect(): Promise<void> {
+    try {
+      const res = await client.acquireTokenSilent(silentRequest);
+      token.value = res.accessToken;
+    } catch (error) {
+      if (error instanceof InteractionRequiredAuthError) {
+        client.acquireTokenRedirect(silentRequest);
+      } else {
+        throw error;
+      }
     }
   }
 
-  abstract signIn(): Promise<void>;
-  abstract signOut(): Promise<void>;
-  abstract getToken(): Promise<string>;
+  return {
+    account: account,
+    token: token,
+    signIn: popup ? signInPopup : signInRedirect,
+    signOut: popup ? signOutPopup : signOutRedirect,
+    getToken: popup ? getTokenPopup : getTokenRedirect,
+  };
 }
