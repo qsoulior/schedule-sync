@@ -1,12 +1,18 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import IntegrationsList from "@/components/IntegrationsList.vue";
+import SchedulesList from "@/components/SchedulesList.vue";
+</script>
 
 <template>
   <header></header>
-  <main></main>
+  <main>
+    <IntegrationsList />
+    <SchedulesList />
+  </main>
 </template>
 
 <style>
-@import "./assets/base.css";
+@import "@/assets/base.css";
 
 #app {
   max-width: 1280px;
