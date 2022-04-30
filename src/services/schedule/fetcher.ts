@@ -5,7 +5,7 @@ interface FetcherContext {
   schedulesInfo: Ref<ScheduleInfo[]>;
   filteredSchedulesInfo: ComputedRef<ScheduleInfo[]>;
   searchedGroup: Ref<string>;
-  getSchedule(group: string): Promise<void>;
+  getSchedule(group: string): Promise<Schedule>;
 }
 
 export function useFetcher(): FetcherContext {
@@ -39,7 +39,14 @@ export function useFetcher(): FetcherContext {
     )
   );
 
+  const cachedSchedules = new Map<string, Schedule>();
+
   async function getSchedule(group: string): Promise<Schedule> {
+    const cachedSchedule = cachedSchedules.get(group);
+    if (cachedSchedule) {
+      return cachedSchedule;
+    }
+
     const response = await fetch(
       `https://schdl.herokuapp.com/api/schedules?group=${group}&newest=1`,
       {
@@ -58,24 +65,15 @@ export function useFetcher(): FetcherContext {
     const schedule: Schedule = JSON.parse(responseText, (key, value) =>
       key === "modified" ? new Date(value) : value
     );
-    return schedule;
-  }
 
-  async function processSchedule(group: string): Promise<void> {
-    try {
-      const schedule = await getSchedule(group);
-      console.log(schedule);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.log(error);
-      }
-    }
+    cachedSchedules.set(group, schedule);
+    return schedule;
   }
 
   return {
     schedulesInfo,
     filteredSchedulesInfo,
     searchedGroup,
-    getSchedule: processSchedule,
+    getSchedule,
   };
 }
