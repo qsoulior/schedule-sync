@@ -12,6 +12,7 @@
     "vue": "^3.2.33"
   },
   "devDependencies": {
+    "@azure/msal-browser": "^2.23.0",
     "@rushstack/eslint-patch": "^1.1.0",
     "@types/node": "^16.11.27",
     "@vitejs/plugin-vue": "^2.3.1",
