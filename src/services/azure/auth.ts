@@ -101,8 +101,8 @@ export function useAuth({ popup = false } = {}): AuthContext {
   }
 
   return {
-    account: account,
-    accessToken: accessToken,
+    account,
+    accessToken,
     signIn: popup ? signInPopup : signInRedirect,
     signOut: popup ? signOutPopup : signOutRedirect,
     acquireToken: popup ? acquireTokenPopup : acquireTokenRedirect,

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import IntegrationsList from "@/components/IntegrationsList.vue";
+import SchedulesList from "@/components/SchedulesList.vue";
 </script>
 
 <template>
   <header></header>
   <main>
     <IntegrationsList />
+    <SchedulesList />
   </main>
 </template>
 
