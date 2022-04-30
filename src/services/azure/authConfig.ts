@@ -18,7 +18,3 @@ export const loginRequest = {
 export const silentRequest = {
   scopes: ["User.Read", "Calendars.ReadWrite"],
 };
-
-export const graphConfig = {
-  meEndpoint: "https://graph.microsoft.com/v1.0/me",
-};
