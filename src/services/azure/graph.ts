@@ -2,28 +2,84 @@ const graphConfig = {
   meEndpoint: "https://graph.microsoft.com/v1.0/me",
 };
 
-export interface CalendarGroup {
-  id: string;
-  classId: string;
+interface EmailAddress {
+  address: string;
   name: string;
+}
+
+interface GraphObject {
+  id: string;
   changeKey: string;
 }
 
-export interface Calendar {
-  id: string;
+interface GraphDateTime {
+  dateTime: string;
+  timeZone: string;
+}
+
+interface GraphLocation {
+  displayName: string;
+  locationType: string;
+}
+
+export interface CalendarGroup extends GraphObject {
+  classId: string;
+  name: string;
+}
+
+export interface Calendar extends GraphObject {
   name: string;
   color: string;
-  changeKey: string;
-  canShare: boolean;
-  canViewPrivateItems: boolean;
   hexColor: string;
+  canShare: boolean;
   canEdit: boolean;
-  isTallyingResponses: boolean;
   isRemovable: boolean;
-  owner: {
-    name: string;
-    address: string;
+  owner: EmailAddress;
+}
+
+type DayOfWeek = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+type RecurrencePatternType =
+  | "daily"
+  | "weekly"
+  | "absoluteMonthly"
+  | "relativeMonthly"
+  | "absoluteYearly"
+  | "relativeYearly";
+type WeekIndex = "first" | "second" | "third" | "fourth" | "last";
+
+interface RecurrencePattern {
+  type: RecurrencePatternType;
+  interval: number;
+  firstDayOfWeek: DayOfWeek;
+  daysOfWeek: DayOfWeek[];
+  dayOfMonth: number;
+  index: WeekIndex;
+  month: number;
+}
+
+type RecurrenceRangeType = "endDate" | "noEnd" | "numbered";
+
+interface RecurrenceRange {
+  type: RecurrenceRangeType;
+  startDate: string;
+  endDate: string;
+  recurrenceTimeZone: string;
+  numberOfOccurrences: number;
+}
+
+export interface Event extends GraphObject {
+  subject: string;
+  body: {
+    contentType: string;
+    content: string;
   };
+  start: GraphDateTime;
+  end: GraphDateTime;
+  recurrence: {
+    pattern: RecurrencePattern;
+    range: RecurrenceRange;
+  };
+  location: GraphLocation;
 }
 
 export class GraphAPI {
