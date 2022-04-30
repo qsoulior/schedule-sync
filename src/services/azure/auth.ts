@@ -6,30 +6,32 @@ import {
 import {
   PublicClientApplication,
   InteractionRequiredAuthError,
+  BrowserAuthError,
   type AccountInfo,
   type EndSessionPopupRequest,
   type EndSessionRequest,
-  BrowserAuthError,
 } from "@azure/msal-browser";
 import { onMounted, ref, type Ref } from "vue";
 
 interface AuthContext {
   account: Ref<AccountInfo | null>;
-  token: Ref<string | null>;
+  accessToken: Ref<string | undefined>;
   signIn(): Promise<void>;
   signOut(): Promise<void>;
-  getToken(): Promise<void>;
+  acquireToken(): Promise<void>;
 }
 
-export function useAuth({ popup = true } = {}): AuthContext {
+export function useAuth({ popup = false } = {}): AuthContext {
   const client = new PublicClientApplication(msalConfig);
   const account = ref<AccountInfo | null>(client.getActiveAccount());
 
   onMounted(async () => {
-    const result = await client.handleRedirectPromise();
-    if (result !== null) {
-      client.setActiveAccount(result.account);
-      account.value = result.account;
+    if (!popup) {
+      const result = await client.handleRedirectPromise();
+      if (result !== null) {
+        client.setActiveAccount(result.account);
+        account.value = result.account;
+      }
     }
   });
 
@@ -65,16 +67,16 @@ export function useAuth({ popup = true } = {}): AuthContext {
     account.value = null;
   }
 
-  const token = ref<string | null>(null);
-  async function getTokenPopup(): Promise<void> {
+  const accessToken = ref<string | undefined>();
+  async function acquireTokenPopup(): Promise<void> {
     try {
       const res = await client.acquireTokenSilent(silentRequest);
-      token.value = res.accessToken;
+      accessToken.value = res.accessToken;
     } catch (error) {
       if (error instanceof InteractionRequiredAuthError) {
         try {
           const res = await client.acquireTokenPopup(silentRequest);
-          token.value = res.accessToken;
+          accessToken.value = res.accessToken;
         } catch (error) {
           if (error instanceof BrowserAuthError) {
             alert(error.errorMessage);
@@ -85,10 +87,10 @@ export function useAuth({ popup = true } = {}): AuthContext {
       }
     }
   }
-  async function getTokenRedirect(): Promise<void> {
+  async function acquireTokenRedirect(): Promise<void> {
     try {
       const res = await client.acquireTokenSilent(silentRequest);
-      token.value = res.accessToken;
+      accessToken.value = res.accessToken;
     } catch (error) {
       if (error instanceof InteractionRequiredAuthError) {
         client.acquireTokenRedirect(silentRequest);
@@ -100,9 +102,9 @@ export function useAuth({ popup = true } = {}): AuthContext {
 
   return {
     account: account,
-    token: token,
+    accessToken: accessToken,
     signIn: popup ? signInPopup : signInRedirect,
     signOut: popup ? signOutPopup : signOutRedirect,
-    getToken: popup ? getTokenPopup : getTokenRedirect,
+    acquireToken: popup ? acquireTokenPopup : acquireTokenRedirect,
   };
 }
