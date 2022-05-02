@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { useFetcher } from "@/services/schedule/fetcher";
 
-const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } =
-  useFetcher();
+const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useFetcher();
+
+async function test(group: string) {
+  const schedule = await getSchedule(group);
+  console.log(schedule);
+}
 </script>
 
 <template>
@@ -12,11 +16,7 @@ const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } =
     </div>
     <div>
       <div>{{ filteredSchedulesInfo.length }} / {{ schedulesInfo.length }}</div>
-      <button
-        @click="getSchedule(schedule.group)"
-        v-for="schedule of filteredSchedulesInfo"
-        :key="schedule.group"
-      >
+      <button @click="test(schedule.group)" v-for="schedule of filteredSchedulesInfo" :key="schedule.group">
         {{ schedule.group }}
         {{ schedule.modified.toLocaleDateString() }}
       </button>

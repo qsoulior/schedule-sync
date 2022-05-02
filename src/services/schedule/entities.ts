@@ -1,21 +1,15 @@
-interface EventTime {
-  start: string;
-  end: string;
-}
-
 interface EventDate {
-  start: string;
-  end: string;
-  frequency: string;
+  start: Date;
+  end: Date;
+  frequency: "once" | "every" | "throughout";
 }
 
-interface Event {
+export interface Event {
   title: string;
   teacher: string;
   type: string;
   subgroup: string;
   location: string;
-  time: EventTime;
   dates: EventDate[];
 }
 

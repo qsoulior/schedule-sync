@@ -1,86 +1,15 @@
-const graphConfig = {
-  meEndpoint: "https://graph.microsoft.com/v1.0/me",
-};
-
-interface EmailAddress {
-  address: string;
-  name: string;
-}
-
-interface GraphObject {
-  id: string;
-  changeKey: string;
-}
-
-interface GraphDateTime {
-  dateTime: string;
-  timeZone: string;
-}
-
-interface GraphLocation {
-  displayName: string;
-  locationType: string;
-}
-
-export interface CalendarGroup extends GraphObject {
-  classId: string;
-  name: string;
-}
-
-export interface Calendar extends GraphObject {
-  name: string;
-  color: string;
-  hexColor: string;
-  canShare: boolean;
-  canEdit: boolean;
-  isRemovable: boolean;
-  owner: EmailAddress;
-}
-
-type DayOfWeek = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
-type RecurrencePatternType =
-  | "daily"
-  | "weekly"
-  | "absoluteMonthly"
-  | "relativeMonthly"
-  | "absoluteYearly"
-  | "relativeYearly";
-type WeekIndex = "first" | "second" | "third" | "fourth" | "last";
-
-interface RecurrencePattern {
-  type: RecurrencePatternType;
-  interval: number;
-  firstDayOfWeek: DayOfWeek;
-  daysOfWeek: DayOfWeek[];
-  dayOfMonth: number;
-  index: WeekIndex;
-  month: number;
-}
-
-type RecurrenceRangeType = "endDate" | "noEnd" | "numbered";
-
-interface RecurrenceRange {
-  type: RecurrenceRangeType;
-  startDate: string;
-  endDate: string;
-  recurrenceTimeZone: string;
-  numberOfOccurrences: number;
-}
-
-export interface Event extends GraphObject {
-  subject: string;
-  body: {
-    contentType: string;
-    content: string;
-  };
-  start: GraphDateTime;
-  end: GraphDateTime;
-  recurrence: {
-    pattern: RecurrencePattern;
-    range: RecurrenceRange;
-  };
-  location: GraphLocation;
-}
+import type { Event as ScheduleEvent } from "@/services/schedule/entities";
+import {
+  graphConfig,
+  type Calendar,
+  type CalendarEvent,
+  type CalendarEventBody,
+  type CalendarGroup,
+  type DayOfWeek,
+  type GraphLocation,
+  type GraphDateTime,
+  type CalendarEventRecurrence,
+} from "@/services/azure/graphConfig";
 
 export class GraphAPI {
   private accessToken: string;
@@ -156,4 +85,61 @@ export class GraphAPI {
     const result: Calendar = await response.json();
     return result;
   }
+}
+
+const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+export async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]> {
+  const events: CalendarEvent[] = [];
+
+  const subject = `${scheduleEvent.title} (${scheduleEvent.type})`;
+  const body: CalendarEventBody = {
+    contentType: "text",
+    content: scheduleEvent.teacher,
+  };
+  const location: GraphLocation = {
+    displayName: scheduleEvent.location,
+  };
+
+  let start: GraphDateTime, end: GraphDateTime, recurrence: CalendarEventRecurrence | undefined;
+  for (const date of scheduleEvent.dates) {
+    if (date.frequency === "once") {
+      start = {
+        dateTime: date.start.toISOString().slice(0, 20),
+        timeZone: "Europe/Moscow",
+      };
+      end = {
+        dateTime: date.end.toISOString().slice(0, 20),
+        timeZone: "Europe/Moscow",
+      };
+      recurrence = undefined;
+    } else {
+      start = end = {
+        dateTime: date.start.toISOString().slice(0, 20),
+        timeZone: "Europe/Moscow",
+      };
+      recurrence = {
+        pattern: {
+          type: "weekly",
+          interval: date.frequency === "every" ? 1 : 2,
+          daysOfWeek: [daysOfWeek[date.start.getDay()]],
+        },
+        range: {
+          type: "endDate",
+          startDate: date.start.toISOString().slice(0, 11),
+          endDate: date.end.toISOString().slice(0, 11),
+        },
+      };
+    }
+    events.push({
+      subject,
+      body,
+      location,
+      start,
+      end,
+      recurrence,
+    });
+  }
+
+  return events;
 }

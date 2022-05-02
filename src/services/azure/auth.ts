@@ -1,8 +1,4 @@
-import {
-  msalConfig,
-  loginRequest,
-  silentRequest,
-} from "@/services/azure/authConfig";
+import { msalConfig, loginRequest, silentRequest } from "@/services/azure/authConfig";
 import {
   PublicClientApplication,
   InteractionRequiredAuthError,
