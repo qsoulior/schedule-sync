@@ -85,6 +85,17 @@ export class GraphAPI {
     const result: Calendar = await response.json();
     return result;
   }
+
+  async createEvent(event: CalendarEvent, calendarId: string): Promise<void> {
+    const response = await fetch(graphConfig.meEndpoint + `/calendars/${calendarId}/events`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(event),
+    });
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+  }
 }
 
 const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -92,7 +103,9 @@ const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "th
 export async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]> {
   const events: CalendarEvent[] = [];
 
-  const subject = `${scheduleEvent.title} (${scheduleEvent.type})`;
+  const subject = `${scheduleEvent.title} (${
+    scheduleEvent.type === "lecture" ? "Лекция" : scheduleEvent.type === "seminar" ? "Семинар" : "Лабораторная работа"
+  })`;
   const body: CalendarEventBody = {
     contentType: "text",
     content: scheduleEvent.teacher,
@@ -103,20 +116,20 @@ export async function parseEvent(scheduleEvent: ScheduleEvent): Promise<Calendar
 
   let start: GraphDateTime, end: GraphDateTime, recurrence: CalendarEventRecurrence | undefined;
   for (const date of scheduleEvent.dates) {
+    start = {
+      dateTime: date.start.toISOString().slice(0, 19),
+      timeZone: "UTC",
+    };
     if (date.frequency === "once") {
-      start = {
-        dateTime: date.start.toISOString().slice(0, 20),
-        timeZone: "Europe/Moscow",
-      };
       end = {
-        dateTime: date.end.toISOString().slice(0, 20),
-        timeZone: "Europe/Moscow",
+        dateTime: date.end.toISOString().slice(0, 19),
+        timeZone: "UTC",
       };
       recurrence = undefined;
     } else {
-      start = end = {
-        dateTime: date.start.toISOString().slice(0, 20),
-        timeZone: "Europe/Moscow",
+      end = {
+        dateTime: date.start.toISOString().slice(0, 11) + date.end.toISOString().slice(11, 19),
+        timeZone: "UTC",
       };
       recurrence = {
         pattern: {
@@ -126,8 +139,8 @@ export async function parseEvent(scheduleEvent: ScheduleEvent): Promise<Calendar
         },
         range: {
           type: "endDate",
-          startDate: date.start.toISOString().slice(0, 11),
-          endDate: date.end.toISOString().slice(0, 11),
+          startDate: date.start.toISOString().slice(0, 10),
+          endDate: date.end.toISOString().slice(0, 10),
         },
       };
     }

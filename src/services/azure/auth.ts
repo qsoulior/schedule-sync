@@ -1,4 +1,3 @@
-import { msalConfig, loginRequest, silentRequest } from "@/services/azure/authConfig";
 import {
   PublicClientApplication,
   InteractionRequiredAuthError,
@@ -8,10 +7,11 @@ import {
   type EndSessionRequest,
 } from "@azure/msal-browser";
 import { onMounted, ref, type Ref } from "vue";
+import { msalConfig, loginRequest, silentRequest } from "@/services/azure/authConfig";
+import { store } from "@/store";
 
 interface AuthContext {
   account: Ref<AccountInfo | null>;
-  accessToken: Ref<string | undefined>;
   signIn(): Promise<void>;
   signOut(): Promise<void>;
   acquireToken(): Promise<void>;
@@ -63,16 +63,15 @@ export function useAuth({ popup = false } = {}): AuthContext {
     account.value = null;
   }
 
-  const accessToken = ref<string | undefined>();
   async function acquireTokenPopup(): Promise<void> {
     try {
       const res = await client.acquireTokenSilent(silentRequest);
-      accessToken.value = res.accessToken;
+      store.accessToken = res.accessToken;
     } catch (error) {
       if (error instanceof InteractionRequiredAuthError) {
         try {
           const res = await client.acquireTokenPopup(silentRequest);
-          accessToken.value = res.accessToken;
+          store.accessToken = res.accessToken;
         } catch (error) {
           if (error instanceof BrowserAuthError) {
             alert(error.errorMessage);
@@ -86,7 +85,7 @@ export function useAuth({ popup = false } = {}): AuthContext {
   async function acquireTokenRedirect(): Promise<void> {
     try {
       const res = await client.acquireTokenSilent(silentRequest);
-      accessToken.value = res.accessToken;
+      store.accessToken = res.accessToken;
     } catch (error) {
       if (error instanceof InteractionRequiredAuthError) {
         client.acquireTokenRedirect(silentRequest);
@@ -98,7 +97,6 @@ export function useAuth({ popup = false } = {}): AuthContext {
 
   return {
     account,
-    accessToken,
     signIn: popup ? signInPopup : signInRedirect,
     signOut: popup ? signOutPopup : signOutRedirect,
     acquireToken: popup ? acquireTokenPopup : acquireTokenRedirect,
