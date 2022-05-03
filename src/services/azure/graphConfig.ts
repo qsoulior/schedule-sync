@@ -1,5 +1,8 @@
-export const graphConfig = {
-  meEndpoint: "https://graph.microsoft.com/v1.0/me",
+const graphEndpoint = "https://graph.microsoft.com/v1.0";
+
+export const graphEndpoints = {
+  base: graphEndpoint,
+  me: graphEndpoint + "/me",
 };
 
 interface EmailAddress {
