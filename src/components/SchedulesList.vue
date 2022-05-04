@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { useToken } from "@/services/azure/auth";
 import { useGraph } from "@/services/azure/graph";
 import { useFetcher } from "@/services/schedule/fetcher";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useFetcher();
 const { status, createdPercents, createSchedule } = useGraph();
+const { acquireToken } = useToken();
 
 async function test(group: string) {
+  await acquireToken();
   const schedule = await getSchedule(group);
   await createSchedule(group, schedule.events);
 }
