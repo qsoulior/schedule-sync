@@ -10,7 +10,7 @@ import type {
   CalendarEventRecurrence,
 } from "@/services/azure/graphConfig";
 import { GraphAPI, type BatchRequest } from "@/services/azure/graphAPI";
-import { store } from "@/store";
+import { store } from "@/services/azure/store";
 
 const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
@@ -72,24 +72,24 @@ async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]
 }
 
 interface GraphContext {
-  status: Ref<string>;
+  statusMessage: Ref<string>;
   createdCount: Ref<number>;
   createdPercents: Ref<number>;
   createSchedule(group: string, events: ScheduleEvent[]): Promise<void>;
 }
 
-export function useGraph(): GraphContext {
+export function useAzureGraph(): GraphContext {
   const graphAPI = computed<GraphAPI | null>(() =>
     store.accessToken !== null ? new GraphAPI(store.accessToken) : null
   );
   const tokenError = new Error("accessToken is null");
 
-  async function createCalendar(name: string): Promise<Calendar> {
+  async function createCalendar(name: string, groupName: string): Promise<Calendar> {
     if (graphAPI.value === null) throw tokenError;
-    let calendarGroup = await graphAPI.value.getCalendarGroup("schdl");
+    let calendarGroup = await graphAPI.value.getCalendarGroup(groupName);
     let calendar: Calendar | null;
     if (calendarGroup === null) {
-      calendarGroup = await graphAPI.value.createCalendarGroup("schdl");
+      calendarGroup = await graphAPI.value.createCalendarGroup(groupName);
       calendar = await graphAPI.value.createCalendar(name, calendarGroup.id);
       return calendar;
     }
@@ -100,7 +100,7 @@ export function useGraph(): GraphContext {
     return calendar;
   }
 
-  const status = ref<string>("");
+  const statusMessage = ref<string>("");
   const parsedCount = ref<number>(0);
   const createdCount = ref<number>(0);
   const createdPercents = computed<number>(() =>
@@ -130,26 +130,26 @@ export function useGraph(): GraphContext {
     }
   }
 
-  async function createSchedule(group: string, events: ScheduleEvent[]) {
+  async function createSchedule(group: string, events: ScheduleEvent[]): Promise<void> {
     parsedCount.value = 0;
     createdCount.value = 0;
     if (graphAPI.value === null) throw tokenError;
-    status.value = "Создание календаря";
-    const calendar = await createCalendar(group);
+    statusMessage.value = "Создание календаря";
+    const calendar = await createCalendar(group, "Расписания");
     const calendarEvents: CalendarEvent[] = [];
-    status.value = "Подготовка расписания";
+    statusMessage.value = "Подготовка расписания";
     for (const event of events) {
       const calendarEventsPart = await parseEvent(event);
       calendarEvents.push(...calendarEventsPart);
     }
     parsedCount.value = calendarEvents.length;
-    status.value = "Загрузка расписания";
+    statusMessage.value = "Загрузка расписания";
     await createEvents(calendarEvents, calendar.id);
-    console.log(parsedCount.value, createdCount.value);
+    statusMessage.value = "Расписание загружено";
   }
 
   return {
-    status,
+    statusMessage,
     createdCount,
     createdPercents,
     createSchedule,

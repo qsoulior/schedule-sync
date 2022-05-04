@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import IntegrationsList from "@/components/IntegrationsList.vue";
 import SchedulesList from "@/components/SchedulesList.vue";
-import { useClient } from "@/services/azure/auth";
+import { useAzureClient } from "@/services/azure/auth";
 
-useClient();
+useAzureClient();
 </script>
 
 <template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAuth } from "@/services/azure/auth";
-import { store } from "@/store";
+import { store } from "@/services/azure/store";
 
 const { signIn, signOut } = useAuth();
 </script>

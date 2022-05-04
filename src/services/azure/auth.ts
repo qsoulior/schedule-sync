@@ -6,7 +6,7 @@ import {
   type EndSessionRequest,
 } from "@azure/msal-browser";
 import { loginRequest, silentRequest } from "@/services/azure/authConfig";
-import { store } from "@/store";
+import { store } from "@/services/azure/store";
 
 interface AuthContext {
   signIn(): Promise<void>;
@@ -17,7 +17,7 @@ interface TokenContext {
   acquireToken(): Promise<void>;
 }
 
-export function useClient(): void {
+export function useAzureClient(): void {
   onMounted(async () => {
     const result = await store.client.handleRedirectPromise();
     if (result !== null) {
@@ -67,7 +67,7 @@ export function useAuth({ popup = false } = {}): AuthContext {
   };
 }
 
-export function useToken({ popup = false } = {}): TokenContext {
+export function useAzureToken({ popup = false } = {}): TokenContext {
   async function acquireTokenPopup(): Promise<void> {
     try {
       const res = await store.client.acquireTokenSilent(silentRequest);
