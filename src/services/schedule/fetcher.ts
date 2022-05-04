@@ -8,7 +8,7 @@ interface FetcherContext {
   getSchedule(group: string): Promise<Schedule>;
 }
 
-export function useFetcher(): FetcherContext {
+export function useScheduleFetcher(): FetcherContext {
   const schedulesInfo = ref<ScheduleInfo[]>([]);
 
   onMounted(async () => {

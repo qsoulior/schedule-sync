@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { useAuth } from "@/services/azure/auth";
+import { store } from "@/services/azure/store";
 
-const { account, signIn, signOut, acquireToken } = useAuth();
+const { signIn, signOut } = useAuth();
 </script>
 
 <template>
   <button @click="signIn">Войти</button>
   <button @click="signOut">Выйти</button>
-  <button @click="acquireToken">Получить токен</button>
-  <div>{{ account?.username }}</div>
+  <div>{{ store.account?.username }}</div>
 </template>
