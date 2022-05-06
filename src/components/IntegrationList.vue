@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import { useAuth } from "@/services/azure/auth";
-import { store } from "@/services/azure/store";
+import { store as azureStore } from "@/services/azure/store";
+import { store, Integration } from "@/store";
 import IconCube from "@/components/icons/IconCube.vue";
 import IntegrationListItem from "@/components/IntegrationListItem.vue";
 
 const { signIn, signOut } = useAuth();
-const active = ref<string>("");
 </script>
 
 <template>
@@ -18,13 +17,13 @@ const active = ref<string>("");
     <div class="flex flex-col gap-y-3">
       <IntegrationListItem
         name="Outlook"
-        :account="store.account?.username"
-        :active="active === 'Outlook'"
-        @click="active = 'Outlook'"
+        :account="azureStore.account?.username"
+        :active="store.active === Integration.Graph"
+        @click="store.active = Integration.Graph"
         @sign-in="signIn"
         @sign-out="signOut"
       />
-      <IntegrationListItem name="Google" :active="active === 'Google'" @click="active = 'Google'" />
+      <IntegrationListItem name="Google" :disabled="true" :active="store.active === Integration.Google" />
     </div>
   </div>
 </template>

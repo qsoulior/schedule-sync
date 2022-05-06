@@ -15,17 +15,19 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div
-    class="flex min-w-[15rem] cursor-pointer flex-row items-center justify-between gap-5 rounded bg-zinc-800 px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-gray-800"
-    :class="active ? 'bg-sky-300/20' : 'hover:bg-zinc-700/50 active:bg-zinc-700/75'"
-    :disabled="disabled"
+  <button
+    class="flex min-w-[15rem] flex-row items-center justify-between gap-5 rounded bg-zinc-800 px-4 py-2"
+    :class="[
+      active ? 'bg-sky-300/10' : !disabled ? 'hover:bg-zinc-700/50 active:bg-zinc-700/75' : '',
+      disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+    ]"
   >
-    <div class="flex w-full flex-col" @click="if (!props.account) emit('signIn');">
+    <div class="flex w-full flex-col items-start" @click="if (!props.account) emit('signIn');">
       <div class="text-sky-300">{{ props.name }}</div>
       <div>{{ props.account }}</div>
     </div>
     <div v-if="props.account" class="hover:text-sky-300" @click="emit('signOut')">
       <IconLogout class="h-5 w-5" />
     </div>
-  </div>
+  </button>
 </template>

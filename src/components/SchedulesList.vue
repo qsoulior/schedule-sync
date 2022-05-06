@@ -2,10 +2,12 @@
 import { useAzureToken } from "@/services/azure/auth";
 import { useAzureGraph } from "@/services/azure/graph";
 import { useScheduleFetcher } from "@/services/schedule/fetcher";
+import BaseInput from "@/components/BaseInput.vue";
+import BaseProgressBar from "@/components/BaseProgressBar.vue";
 import IconCalendar from "@/components/icons/IconCalendar.vue";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
-const { statusMessage, createdPercents, createSchedule } = useAzureGraph();
+const { statusMessage, createdPercentage, createdCount, createSchedule } = useAzureGraph();
 const { acquireToken } = useAzureToken();
 
 async function test(group: string) {
@@ -22,24 +24,34 @@ async function test(group: string) {
       <div>Расписания ({{ filteredSchedulesInfo.length }}/{{ schedulesInfo.length }})</div>
     </div>
     <form class="mb-5 w-full" @submit.prevent>
-      <input
-        class="w-full rounded-l bg-zinc-800 px-3 py-1.5 placeholder:text-zinc-400/75 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-        placeholder="Название группы"
+      <BaseInput
+        class="w-full"
         type="search"
+        placeholder="Название группы"
+        :disabled="createdPercentage !== 0"
         v-model="searchedGroup"
       />
     </form>
-    <div v-if="filteredSchedulesInfo.length > 0" class="grid grid-cols-4 gap-3">
-      <button
-        v-for="schedule of filteredSchedulesInfo"
-        :key="schedule.group"
-        @click="test(schedule.group)"
-        class="cursor-pointer rounded bg-zinc-800 px-4 py-2 text-center hover:bg-zinc-700/50 disabled:cursor-not-allowed disabled:bg-gray-800"
-      >
-        <div>{{ schedule.group }}</div>
-        <div class="text-xs">{{ schedule.modified.toLocaleDateString() }}</div>
+    <div v-if="createdPercentage === 0">
+      <div v-if="filteredSchedulesInfo.length > 0" class="grid grid-cols-4 gap-3">
+        <button
+          v-for="schedule of filteredSchedulesInfo"
+          :key="schedule.group"
+          @click="test(schedule.group)"
+          class="cursor-pointer rounded bg-zinc-800 px-4 py-2 text-center hover:bg-zinc-700/50 disabled:cursor-not-allowed disabled:bg-gray-800"
+        >
+          <div>{{ schedule.group }}</div>
+          <div class="text-xs">{{ schedule.modified.toLocaleDateString() }}</div>
+        </button>
+      </div>
+      <div v-else>Расписания не найдены</div>
+    </div>
+    <div v-else>
+      <BaseProgressBar :percentage="createdPercentage" />
+      <div class="mb-5">{{ statusMessage }}</div>
+      <button v-if="createdPercentage === 100" class="rounded bg-zinc-800 px-4 py-1" @click="createdCount = 0">
+        Вернуться ко всем расписаниям
       </button>
     </div>
-    <div v-else>Расписания не найдены</div>
   </div>
 </template>
