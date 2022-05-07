@@ -1,19 +1,37 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { useAzureToken } from "@/services/azure/auth";
 import { useAzureGraph } from "@/services/azure/graph";
 import { useScheduleFetcher } from "@/services/schedule/fetcher";
 import BaseInput from "@/components/BaseInput.vue";
+import BaseButton from "@/components/BaseButton.vue";
 import BaseProgressBar from "@/components/BaseProgressBar.vue";
 import IconCalendar from "@/components/icons/IconCalendar.vue";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
-const { statusMessage, createdPercentage, createdCount, createSchedule } = useAzureGraph();
+const { statusMessage, createdPercentage, createSchedule } = useAzureGraph();
 const { acquireToken } = useAzureToken();
 
-async function test(group: string) {
-  await acquireToken();
-  const schedule = await getSchedule(group);
-  await createSchedule(group, schedule.events);
+enum Status {
+  Init,
+  Pending,
+  Success,
+  Error,
+}
+
+const currentStatus = ref<Status>(Status.Init);
+
+async function syncSchedule(group: string): Promise<void> {
+  currentStatus.value = Status.Pending;
+  try {
+    await acquireToken();
+    const schedule = await getSchedule(group);
+    await createSchedule(group, schedule.events);
+    currentStatus.value = Status.Success;
+  } catch (error) {
+    console.log(error);
+    currentStatus.value = Status.Error;
+  }
 }
 </script>
 
@@ -28,30 +46,30 @@ async function test(group: string) {
         class="w-full"
         type="search"
         placeholder="Название группы"
-        :disabled="createdPercentage !== 0"
+        :disabled="currentStatus !== Status.Init"
         v-model="searchedGroup"
       />
     </form>
-    <div v-if="createdPercentage === 0">
-      <div v-if="filteredSchedulesInfo.length > 0" class="grid grid-cols-4 gap-3">
-        <button
+    <div v-if="currentStatus === Status.Init">
+      <div v-if="filteredSchedulesInfo.length > 0" class="flex flex-wrap gap-3">
+        <BaseButton
+          class="px-4 py-2 flex-1"
           v-for="schedule of filteredSchedulesInfo"
           :key="schedule.group"
-          @click="test(schedule.group)"
-          class="cursor-pointer rounded bg-zinc-800 px-4 py-2 text-center hover:bg-zinc-700/50 disabled:cursor-not-allowed disabled:bg-gray-800"
+          @click="syncSchedule(schedule.group)"
         >
           <div>{{ schedule.group }}</div>
           <div class="text-xs">{{ schedule.modified.toLocaleDateString() }}</div>
-        </button>
+        </BaseButton>
       </div>
       <div v-else>Расписания не найдены</div>
     </div>
     <div v-else>
       <BaseProgressBar :percentage="createdPercentage" />
       <div class="mb-5">{{ statusMessage }}</div>
-      <button v-if="createdPercentage === 100" class="rounded bg-zinc-800 px-4 py-1" @click="createdCount = 0">
+      <BaseButton v-if="currentStatus === Status.Success" class="px-4 py-1.5" @click="currentStatus = Status.Init">
         Вернуться ко всем расписаниям
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>
