@@ -14,9 +14,9 @@ const percentage = computed<number>(() => Math.round(props.percentage));
 
 <template>
   <div class="flex items-center gap-3">
-    <div class="h-2 flex-auto bg-zinc-700 rounded">
+    <div class="h-2 flex-auto dark:bg-zinc-700 bg-zinc-100 rounded">
       <div
-        class="h-2 bg-sky-300 rounded transition-all duration-500 ease-linear"
+        class="h-2 dark:bg-sky-300 bg-sky-400 rounded transition-all duration-500 ease-linear"
         :style="{ width: percentage + '%' }"
       ></div>
     </div>

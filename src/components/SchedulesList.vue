@@ -36,9 +36,9 @@ async function syncSchedule(group: string): Promise<void> {
 </script>
 
 <template>
-  <div class="w-[46rem] rounded border border-zinc-800 bg-zinc-800/25 p-5">
+  <div class="w-[46rem] rounded border dark:border-zinc-800 border-zinc-200 dark:bg-zinc-800/25 bg-zinc-50/25 p-5">
     <div class="mb-5 flex flex-row items-center gap-1.5">
-      <IconCalendar class="h-5 w-5 stroke-sky-300" />
+      <IconCalendar class="h-5 w-5 dark:stroke-sky-300 stroke-sky-400" />
       <div>Расписания ({{ filteredSchedulesInfo.length }}/{{ schedulesInfo.length }})</div>
     </div>
     <form class="mb-5 w-full" @submit.prevent>
