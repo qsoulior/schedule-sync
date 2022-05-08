@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from "vue";
-import type { Event as ScheduleEvent } from "@/services/schedule/entities";
+import type { Event as ScheduleEvent } from "@/composables/schedule/entities";
 import type {
   Calendar,
   CalendarEvent,
@@ -8,9 +8,9 @@ import type {
   GraphLocation,
   GraphDateTime,
   CalendarEventRecurrence,
-} from "@/services/azure/graphConfig";
-import { GraphAPI, type BatchRequest } from "@/services/azure/graphAPI";
-import { store } from "@/services/azure/store";
+} from "@/composables/azure/graphConfig";
+import { GraphAPI, type BatchRequest } from "@/composables/azure/graphAPI";
+import { useAzureStore } from "@/stores/azure";
 
 const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
@@ -79,8 +79,10 @@ interface GraphContext {
 }
 
 export function useAzureGraph(): GraphContext {
+  const azureStore = useAzureStore();
+
   const graphAPI = computed<GraphAPI | null>(() =>
-    store.accessToken !== null ? new GraphAPI(store.accessToken) : null
+    azureStore.accessToken ? new GraphAPI(azureStore.accessToken) : null
   );
   const tokenError = new Error("accessToken is null");
 

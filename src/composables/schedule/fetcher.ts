@@ -1,4 +1,4 @@
-import type { ScheduleInfo, Schedule } from "@/services/schedule/entities";
+import type { ScheduleInfo, Schedule } from "@/composables/schedule/entities";
 import { computed, onMounted, ref, type ComputedRef, type Ref } from "vue";
 
 interface FetcherContext {

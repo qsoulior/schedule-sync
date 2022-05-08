@@ -2,9 +2,10 @@
 import LayoutHeader from "@/components/LayoutHeader.vue";
 import IntegrationList from "@/components/IntegrationList.vue";
 import SchedulesList from "@/components/SchedulesList.vue";
-import { useAzureClient } from "@/services/azure/auth";
-import { store as azureStore } from "@/services/azure/store";
+import { useAzureClient } from "@/composables/azure/auth";
+import { useAzureStore } from "@/stores/azure";
 
+const azureStore = useAzureStore();
 useAzureClient();
 </script>
 

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { useAuth } from "@/services/azure/auth";
-import { store as azureStore } from "@/services/azure/store";
+import { useAuth } from "@/composables/azure/auth";
 import { store, Integration } from "@/store";
+import { useAzureStore } from "@/stores/azure";
 import IntegrationListItem from "@/components/IntegrationListItem.vue";
 import IconUserCircle from "@/components/icons/IconUserCircle.vue";
 
+const azureStore = useAzureStore();
 const { signIn, signOut } = useAuth();
 
 if (azureStore.account) {
