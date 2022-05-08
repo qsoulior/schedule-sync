@@ -145,7 +145,11 @@ export function useAzureGraph(): GraphContext {
     parsedCount.value = calendarEvents.length;
     statusMessage.value = "Загрузка расписания";
     await createEvents(calendarEvents, calendar.id);
-    statusMessage.value = "Расписание загружено";
+    if (createdCount.value === parsedCount.value) {
+      statusMessage.value = "Расписание загружено";
+    } else {
+      statusMessage.value = "Ошибка загрузки расписания";
+    }
   }
 
   return {

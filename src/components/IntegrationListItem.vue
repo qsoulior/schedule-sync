@@ -25,8 +25,9 @@ const emit = defineEmits<{
         : '',
       disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
     ]"
+    @click="if (!props.account) emit('signIn');"
   >
-    <div class="flex w-full flex-col items-start" @click="if (!props.account) emit('signIn');">
+    <div class="flex w-full flex-col items-start">
       <div class="dark:text-sky-300 text-sky-400">{{ props.name }}</div>
       <div>{{ props.account }}</div>
     </div>

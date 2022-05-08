@@ -27,7 +27,11 @@ async function syncSchedule(group: string): Promise<void> {
     await acquireToken();
     const schedule = await getSchedule(group);
     await createSchedule(group, schedule.events);
-    currentStatus.value = Status.Success;
+    if (createdPercentage.value === 100) {
+      currentStatus.value = Status.Success;
+    } else {
+      currentStatus.value = Status.Error;
+    }
   } catch (error) {
     console.log(error);
     currentStatus.value = Status.Error;

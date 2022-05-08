@@ -41,12 +41,12 @@ function setTheme(theme: Theme) {
     <div class="text-lg dark:text-sky-300 text-sky-400">Schedule Sync</div>
     <div class="flex items-center gap-3">
       <button>
-        <IconMoon
+        <IconSun
           class="hover:dark:stroke-sky-300 hover:stroke-sky-400 w-5 h-5"
           v-if="currentTheme === Theme.Dark"
           @click="setTheme(Theme.Light)"
         />
-        <IconSun class="hover:dark:stroke-sky-300 hover:stroke-sky-400 w-5 h-5" v-else @click="setTheme(Theme.Dark)" />
+        <IconMoon class="hover:dark:stroke-sky-300 hover:stroke-sky-400 w-5 h-5" v-else @click="setTheme(Theme.Dark)" />
       </button>
       <a href="https://github.com/1asagne/schedule-sync" target="_blank">
         <IconGithub class="h-7 w-7 hover:dark:fill-sky-300 hover:fill-sky-400" />
