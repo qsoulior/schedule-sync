@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { useAuth } from "@/composables/azure/auth";
-import { useAzureStore } from "@/stores/azure";
+import { accountStore, AccountType } from "@/stores/account";
+import { azureStore } from "@/stores/azure";
+import { useAzureAuth } from "@/composables/azure/auth";
+// import { googleStore } from "@/stores/google";
+// import { useGoogleAuth } from "@/composables/google/auth";
 import AccountListItem from "@/components/AccountListItem.vue";
 import IconUserCircle from "@/components/icons/IconUserCircle.vue";
 
-const azureStore = useAzureStore();
-const { signIn, signOut } = useAuth();
+const azureContext = useAzureAuth();
+// const googleContext = useGoogleAuth();
+
+if (azureStore.account !== null) {
+  accountStore.selected = AccountType.Azure;
+}
+// else if (googleStore.account !== null)
 </script>
 
 <template>
@@ -20,11 +28,16 @@ const { signIn, signOut } = useAuth();
       <AccountListItem
         name="Outlook"
         :account="azureStore.account?.username"
-        :active="true"
-        @sign-in="signIn"
-        @sign-out="signOut"
+        :selected="accountStore.selected === AccountType.Azure"
+        @click="accountStore.selected = AccountType.Azure"
+        @sign-in="azureContext.signIn()"
+        @sign-out="azureContext.signOut()"
       />
-      <AccountListItem name="Google (в разработке)" :disabled="true" :active="false" />
+      <AccountListItem
+        name="Google"
+        :selected="accountStore.selected === AccountType.Google"
+        @click="accountStore.selected = AccountType.Google"
+      />
     </div>
   </div>
 </template>

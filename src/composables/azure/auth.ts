@@ -5,7 +5,8 @@ import {
   type EndSessionRequest,
 } from "@azure/msal-browser";
 import { loginRequest, silentRequest } from "@/composables/azure/authConfig";
-import { useAzureStore } from "@/stores/azure";
+import { azureStore } from "@/stores/azure";
+import { accountStore, AccountType } from "@/stores/account";
 
 interface AuthContext {
   signIn(): Promise<void>;
@@ -17,24 +18,23 @@ interface TokenContext {
 }
 
 export function useAzureClient(): void {
-  const azureStore = useAzureStore();
   azureStore.client.handleRedirectPromise().then((result) => {
     if (result !== null) {
       azureStore.client.setActiveAccount(result.account);
       azureStore.account = result.account;
+      accountStore.selected = AccountType.Azure;
     }
   });
 }
 
-export function useAuth({ popup = false } = {}): AuthContext {
-  const azureStore = useAzureStore();
-
+export function useAzureAuth({ popup = false } = {}): AuthContext {
   azureStore.account = azureStore.client.getActiveAccount();
   async function signInPopup(): Promise<void> {
     try {
       const result = await azureStore.client.loginPopup(loginRequest);
       azureStore.client.setActiveAccount(result.account);
       azureStore.account = result.account;
+      accountStore.selected = AccountType.Azure;
     } catch (error) {
       if (error instanceof BrowserAuthError) {
         alert(error.errorMessage);
@@ -69,8 +69,6 @@ export function useAuth({ popup = false } = {}): AuthContext {
 }
 
 export function useAzureToken({ popup = false } = {}): TokenContext {
-  const azureStore = useAzureStore();
-
   async function acquireTokenPopup(): Promise<void> {
     try {
       const res = await azureStore.client.acquireTokenSilent(silentRequest);

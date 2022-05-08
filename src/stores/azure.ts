@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { reactive } from "vue";
 import { PublicClientApplication, type AccountInfo } from "@azure/msal-browser";
 import { msalConfig } from "@/composables/azure/authConfig";
 
@@ -8,11 +8,7 @@ interface State {
   account: AccountInfo | null;
 }
 
-export const useAzureStore = defineStore("azure", {
-  state: (): State => ({
-    client: new PublicClientApplication(msalConfig),
-    account: null,
-  }),
-  getters: {},
-  actions: {},
+export const azureStore = reactive<State>({
+  client: new PublicClientApplication(msalConfig),
+  account: null,
 });

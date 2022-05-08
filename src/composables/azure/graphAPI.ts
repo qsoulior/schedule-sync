@@ -104,6 +104,17 @@ export class GraphAPI {
     return result;
   }
 
+  async deleteCalendar(groupId: string, calendarId: string): Promise<void> {
+    const response = await fetch(graphEndpoints.me + `/calendarGroups/${groupId}/calendars/${calendarId}`, {
+      method: "DELETE",
+      headers: this.headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+  }
+
   async createEvent(event: CalendarEvent, calendarId: string): Promise<void> {
     const response = await fetch(graphEndpoints.me + `/calendars/${calendarId}/events`, {
       method: "POST",

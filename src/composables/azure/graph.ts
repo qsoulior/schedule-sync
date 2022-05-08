@@ -10,7 +10,7 @@ import type {
   CalendarEventRecurrence,
 } from "@/composables/azure/graphEntities";
 import { GraphAPI, type BatchRequest } from "@/composables/azure/graphAPI";
-import { useAzureStore } from "@/stores/azure";
+import { azureStore } from "@/stores/azure";
 
 const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
@@ -79,8 +79,6 @@ interface GraphContext {
 }
 
 export function useAzureGraph(): GraphContext {
-  const azureStore = useAzureStore();
-
   const graphAPI = computed<GraphAPI | null>(() =>
     azureStore.accessToken ? new GraphAPI(azureStore.accessToken) : null
   );
