@@ -1,4 +1,9 @@
-import { graphEndpoints, type Calendar, type CalendarEvent, type CalendarGroup } from "@/services/azure/graphConfig";
+import {
+  graphEndpoints,
+  type Calendar,
+  type CalendarEvent,
+  type CalendarGroup,
+} from "@/composables/azure/graphEntities";
 
 export interface BatchRequest {
   id: string;
@@ -97,6 +102,17 @@ export class GraphAPI {
     }
     const result: Calendar = await response.json();
     return result;
+  }
+
+  async deleteCalendar(groupId: string, calendarId: string): Promise<void> {
+    const response = await fetch(graphEndpoints.me + `/calendarGroups/${groupId}/calendars/${calendarId}`, {
+      method: "DELETE",
+      headers: this.headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
   }
 
   async createEvent(event: CalendarEvent, calendarId: string): Promise<void> {

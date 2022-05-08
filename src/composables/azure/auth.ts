@@ -4,9 +4,9 @@ import {
   type EndSessionPopupRequest,
   type EndSessionRequest,
 } from "@azure/msal-browser";
-import { loginRequest, silentRequest } from "@/services/azure/authConfig";
-import { store as azureStore } from "@/services/azure/store";
-import { Integration, store } from "@/store";
+import { loginRequest, silentRequest } from "@/composables/azure/authConfig";
+import { azureStore } from "@/stores/azure";
+import { accountStore, AccountType } from "@/stores/account";
 
 interface AuthContext {
   signIn(): Promise<void>;
@@ -22,18 +22,19 @@ export function useAzureClient(): void {
     if (result !== null) {
       azureStore.client.setActiveAccount(result.account);
       azureStore.account = result.account;
-      store.active = Integration.Graph;
+      accountStore.selected = AccountType.Azure;
     }
   });
 }
 
-export function useAuth({ popup = false } = {}): AuthContext {
+export function useAzureAuth({ popup = false } = {}): AuthContext {
   azureStore.account = azureStore.client.getActiveAccount();
   async function signInPopup(): Promise<void> {
     try {
       const result = await azureStore.client.loginPopup(loginRequest);
       azureStore.client.setActiveAccount(result.account);
       azureStore.account = result.account;
+      accountStore.selected = AccountType.Azure;
     } catch (error) {
       if (error instanceof BrowserAuthError) {
         alert(error.errorMessage);

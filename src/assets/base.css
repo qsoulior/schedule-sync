@@ -9,8 +9,8 @@ html {
 body {
   @apply font-sans;
   @apply dark:bg-zinc-900 bg-white dark:text-gray-200 text-zinc-900;
+  @apply transition-colors;
   min-height: 100vh;
-  transition: color 0.5s, background-color 0.5s;
   line-height: 1.6;
   font-size: 15px;
 }
