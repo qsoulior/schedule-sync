@@ -8,7 +8,7 @@ import type {
   GraphLocation,
   GraphDateTime,
   CalendarEventRecurrence,
-} from "@/composables/azure/graphConfig";
+} from "@/composables/azure/graphEntities";
 import { GraphAPI, type BatchRequest } from "@/composables/azure/graphAPI";
 import { useAzureStore } from "@/stores/azure";
 

@@ -1,4 +1,9 @@
-import { graphEndpoints, type Calendar, type CalendarEvent, type CalendarGroup } from "@/composables/azure/graphConfig";
+import {
+  graphEndpoints,
+  type Calendar,
+  type CalendarEvent,
+  type CalendarGroup,
+} from "@/composables/azure/graphEntities";
 
 export interface BatchRequest {
   id: string;

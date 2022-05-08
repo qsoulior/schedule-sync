@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import { useAuth } from "@/composables/azure/auth";
-import { store, Integration } from "@/store";
 import { useAzureStore } from "@/stores/azure";
-import IntegrationListItem from "@/components/IntegrationListItem.vue";
+import AccountListItem from "@/components/AccountListItem.vue";
 import IconUserCircle from "@/components/icons/IconUserCircle.vue";
 
 const azureStore = useAzureStore();
 const { signIn, signOut } = useAuth();
-
-if (azureStore.account) {
-  store.active = Integration.Graph;
-}
 </script>
 
 <template>
@@ -22,18 +17,14 @@ if (azureStore.account) {
       <div>Аккаунты</div>
     </div>
     <div class="flex flex-col gap-y-3">
-      <IntegrationListItem
+      <AccountListItem
         name="Outlook"
         :account="azureStore.account?.username"
-        :active="store.active === Integration.Graph"
+        :active="true"
         @sign-in="signIn"
         @sign-out="signOut"
       />
-      <IntegrationListItem
-        name="Google (в разработке)"
-        :disabled="true"
-        :active="store.active === Integration.Google"
-      />
+      <AccountListItem name="Google (в разработке)" :disabled="true" :active="false" />
     </div>
   </div>
 </template>

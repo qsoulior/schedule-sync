@@ -6,7 +6,6 @@ import {
 } from "@azure/msal-browser";
 import { loginRequest, silentRequest } from "@/composables/azure/authConfig";
 import { useAzureStore } from "@/stores/azure";
-import { Integration, store } from "@/store";
 
 interface AuthContext {
   signIn(): Promise<void>;
@@ -23,7 +22,6 @@ export function useAzureClient(): void {
     if (result !== null) {
       azureStore.client.setActiveAccount(result.account);
       azureStore.account = result.account;
-      store.active = Integration.Graph;
     }
   });
 }
