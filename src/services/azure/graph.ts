@@ -74,7 +74,7 @@ async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]
 interface GraphContext {
   statusMessage: Ref<string>;
   createdCount: Ref<number>;
-  createdPercents: Ref<number>;
+  createdPercentage: Ref<number>;
   createSchedule(group: string, events: ScheduleEvent[]): Promise<void>;
 }
 
@@ -103,7 +103,7 @@ export function useAzureGraph(): GraphContext {
   const statusMessage = ref<string>("");
   const parsedCount = ref<number>(0);
   const createdCount = ref<number>(0);
-  const createdPercents = computed<number>(() =>
+  const createdPercentage = computed<number>(() =>
     parsedCount.value === 0 ? 0 : (createdCount.value / parsedCount.value) * 100
   );
 
@@ -145,13 +145,17 @@ export function useAzureGraph(): GraphContext {
     parsedCount.value = calendarEvents.length;
     statusMessage.value = "Загрузка расписания";
     await createEvents(calendarEvents, calendar.id);
-    statusMessage.value = "Расписание загружено";
+    if (createdCount.value === parsedCount.value) {
+      statusMessage.value = "Расписание загружено";
+    } else {
+      statusMessage.value = "Ошибка загрузки расписания";
+    }
   }
 
   return {
     statusMessage,
     createdCount,
-    createdPercents,
+    createdPercentage,
     createSchedule,
   };
 }

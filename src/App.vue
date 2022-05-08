@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import IntegrationsList from "@/components/IntegrationsList.vue";
+import LayoutHeader from "@/components/LayoutHeader.vue";
+import IntegrationList from "@/components/IntegrationList.vue";
 import SchedulesList from "@/components/SchedulesList.vue";
 import { useAzureClient } from "@/services/azure/auth";
+import { store as azureStore } from "@/services/azure/store";
 
 useAzureClient();
 </script>
 
 <template>
-  <header></header>
-  <main>
-    <IntegrationsList />
-    <SchedulesList />
+  <LayoutHeader />
+  <main
+    class="container md:px-5 py-10 flex items-start justify-center flex-wrap md:flex-nowrap gap-5 lg:gap-10 mx-auto"
+  >
+    <IntegrationList />
+    <SchedulesList class="flex-initial" v-if="azureStore.account" />
   </main>
 </template>
 
 <style>
-@import "@/assets/base.css";
+@import url("@/assets/base.css");
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-
   font-weight: normal;
 }
 </style>
