@@ -10,7 +10,6 @@ import type {
   CalendarEventRecurrence,
 } from "@/composables/azure/graphEntities";
 import { GraphAPI, type BatchRequest } from "@/composables/azure/graphAPI";
-import { azureStore } from "@/stores/azure";
 
 const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
@@ -78,10 +77,8 @@ interface GraphContext {
   createSchedule(group: string, events: ScheduleEvent[]): Promise<void>;
 }
 
-export function useAzureGraph(): GraphContext {
-  const graphAPI = computed<GraphAPI | null>(() =>
-    azureStore.accessToken ? new GraphAPI(azureStore.accessToken) : null
-  );
+export function useAzureGraph(accessToken: Ref<string | undefined>): GraphContext {
+  const graphAPI = computed<GraphAPI | null>(() => (accessToken.value ? new GraphAPI(accessToken.value) : null));
   const tokenError = new Error("accessToken is null");
 
   async function createCalendar(name: string, groupName: string): Promise<Calendar> {

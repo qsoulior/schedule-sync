@@ -1,3 +1,5 @@
+import { accountStore, AccountType } from "@/stores/account";
+
 const rootUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
 const searchParams = new URLSearchParams({
   client_id: "",
@@ -11,16 +13,6 @@ export const authUrl = rootUrl + "?" + searchParams.toString();
 async function randomHexString(length = 16) {
   const randomValues = crypto.getRandomValues(new Uint8Array(length));
   return Array.from(randomValues, (value) => value.toString(length)).join("");
-}
-
-export async function signIn() {
-  const url = new URL(authUrl);
-  const nonce = await randomHexString(16);
-  url.searchParams.set("nonce", nonce);
-  const state = await randomHexString(32);
-  url.searchParams.set("state", state);
-  sessionStorage.setItem("gis", JSON.stringify({ state: state, nonce: nonce }));
-  window.location.href = url.toString();
 }
 
 interface TokenInfo {
@@ -81,8 +73,49 @@ export async function handleRedirect(): Promise<string | null> {
   return tokenInfo.email;
 }
 
-export function getActiveUsername(): string | null {
+export function getActiveAccount(): string | null {
   const storedData = getStoredData();
   if (storedData === null) return null;
   return storedData.username ?? null;
+}
+
+interface AuthContext {
+  signIn(): Promise<void>;
+  signOut(): Promise<void>;
+}
+
+export function useGoogleAuth(): AuthContext {
+  accountStore.google = getActiveAccount();
+
+  async function signIn(): Promise<void> {
+    const url = new URL(authUrl);
+    const nonce = await randomHexString(16);
+    url.searchParams.set("nonce", nonce);
+    const state = await randomHexString(32);
+    url.searchParams.set("state", state);
+    sessionStorage.setItem("gis", JSON.stringify({ state: state, nonce: nonce }));
+    window.location.href = url.toString();
+  }
+
+  async function signOut(): Promise<void> {
+    sessionStorage.removeItem("gis");
+    accountStore.google = null;
+    if (accountStore.selected === AccountType.Google) {
+      accountStore.selected = undefined;
+    }
+  }
+
+  return {
+    signIn,
+    signOut,
+  };
+}
+
+export function useGoogleClient(): void {
+  handleRedirect().then((result) => {
+    if (result !== null) {
+      accountStore.google = result;
+      accountStore.selected = AccountType.Google;
+    }
+  });
 }

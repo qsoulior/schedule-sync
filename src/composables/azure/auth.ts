@@ -1,12 +1,12 @@
 import {
   InteractionRequiredAuthError,
+  PublicClientApplication,
   BrowserAuthError,
   type EndSessionPopupRequest,
-  type EndSessionRequest,
 } from "@azure/msal-browser";
-import { loginRequest, silentRequest } from "@/composables/azure/authConfig";
-import { azureStore } from "@/stores/azure";
+import { loginRequest, msalConfig, silentRequest } from "@/composables/azure/authConfig";
 import { accountStore, AccountType } from "@/stores/account";
+import { ref, type Ref } from "vue";
 
 interface AuthContext {
   signIn(): Promise<void>;
@@ -14,26 +14,29 @@ interface AuthContext {
 }
 
 interface TokenContext {
+  accessToken: Ref<string | undefined>;
   acquireToken(): Promise<void>;
 }
 
+const client = new PublicClientApplication(msalConfig);
+
 export function useAzureClient(): void {
-  azureStore.client.handleRedirectPromise().then((result) => {
+  client.handleRedirectPromise().then((result) => {
     if (result !== null) {
-      azureStore.client.setActiveAccount(result.account);
-      azureStore.account = result.account;
+      client.setActiveAccount(result.account);
+      accountStore.azure = result.account;
       accountStore.selected = AccountType.Azure;
     }
   });
 }
 
 export function useAzureAuth({ popup = false } = {}): AuthContext {
-  azureStore.account = azureStore.client.getActiveAccount();
+  accountStore.azure = client.getActiveAccount();
   async function signInPopup(): Promise<void> {
     try {
-      const result = await azureStore.client.loginPopup(loginRequest);
-      azureStore.client.setActiveAccount(result.account);
-      azureStore.account = result.account;
+      const result = await client.loginPopup(loginRequest);
+      client.setActiveAccount(result.account);
+      accountStore.azure = result.account;
       accountStore.selected = AccountType.Azure;
     } catch (error) {
       if (error instanceof BrowserAuthError) {
@@ -43,23 +46,23 @@ export function useAzureAuth({ popup = false } = {}): AuthContext {
   }
 
   async function signInRedirect(): Promise<void> {
-    azureStore.client.loginRedirect(loginRequest);
+    client.loginRedirect(loginRequest);
   }
 
   async function signOutPopup(): Promise<void> {
     const logoutRequest: EndSessionPopupRequest = {
-      account: azureStore.account,
+      account: accountStore.azure,
     };
-    await azureStore.client.logoutPopup(logoutRequest);
-    azureStore.account = null;
+    await client.logoutPopup(logoutRequest);
+    accountStore.azure = null;
   }
 
   async function signOutRedirect(): Promise<void> {
-    const logoutRequest: EndSessionRequest = {
-      account: azureStore.account,
-    };
-    await azureStore.client.logoutRedirect(logoutRequest);
-    azureStore.account = null;
+    await client.logoutRedirect({
+      onRedirectNavigate: () => false,
+    });
+    accountStore.azure = null;
+    accountStore.selected = undefined;
   }
 
   return {
@@ -69,15 +72,17 @@ export function useAzureAuth({ popup = false } = {}): AuthContext {
 }
 
 export function useAzureToken({ popup = false } = {}): TokenContext {
+  const accessToken = ref<string>();
+
   async function acquireTokenPopup(): Promise<void> {
     try {
-      const res = await azureStore.client.acquireTokenSilent(silentRequest);
-      azureStore.accessToken = res.accessToken;
+      const res = await client.acquireTokenSilent(silentRequest);
+      accessToken.value = res.accessToken;
     } catch (error) {
       if (error instanceof InteractionRequiredAuthError) {
         try {
-          const res = await azureStore.client.acquireTokenPopup(silentRequest);
-          azureStore.accessToken = res.accessToken;
+          const res = await client.acquireTokenPopup(silentRequest);
+          accessToken.value = res.accessToken;
         } catch (error) {
           if (error instanceof BrowserAuthError) {
             throw error.errorMessage;
@@ -92,17 +97,18 @@ export function useAzureToken({ popup = false } = {}): TokenContext {
   }
   async function acquireTokenRedirect(): Promise<void> {
     try {
-      const res = await azureStore.client.acquireTokenSilent(silentRequest);
-      azureStore.accessToken = res.accessToken;
+      const res = await client.acquireTokenSilent(silentRequest);
+      accessToken.value = res.accessToken;
     } catch (error) {
       if (error instanceof InteractionRequiredAuthError) {
-        azureStore.client.acquireTokenRedirect(silentRequest);
+        client.acquireTokenRedirect(silentRequest);
       } else {
         throw error;
       }
     }
   }
   return {
+    accessToken,
     acquireToken: popup ? acquireTokenPopup : acquireTokenRedirect,
   };
 }

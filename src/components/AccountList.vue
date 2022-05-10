@@ -1,19 +1,26 @@
 <script setup lang="ts">
 import { accountStore, AccountType } from "@/stores/account";
-import { azureStore } from "@/stores/azure";
 import { useAzureAuth } from "@/composables/azure/auth";
-// import { googleStore } from "@/stores/google";
-import { signIn } from "@/composables/google/auth";
+import { useGoogleAuth } from "@/composables/google/auth";
 import AccountListItem from "@/components/AccountListItem.vue";
 import IconUserCircle from "@/components/icons/IconUserCircle.vue";
 
 const azureContext = useAzureAuth();
-// const googleContext = useGoogleAuth();
+const googleContext = useGoogleAuth();
 
-if (azureStore.account !== null) {
+if (accountStore.azure !== null) {
   accountStore.selected = AccountType.Azure;
+} else if (accountStore.google !== null) {
+  accountStore.selected = AccountType.Google;
 }
-// else if (googleStore.account !== null)
+
+function selectAccount(type: AccountType) {
+  if (type === AccountType.Azure && accountStore.azure) {
+    accountStore.selected = AccountType.Azure;
+  } else if (type === AccountType.Google && accountStore.google) {
+    accountStore.selected = AccountType.Google;
+  }
+}
 </script>
 
 <template>
@@ -27,17 +34,19 @@ if (azureStore.account !== null) {
     <div class="flex flex-col gap-y-3">
       <AccountListItem
         name="Outlook"
-        :account="azureStore.account?.username"
+        :account="accountStore.azure?.username"
         :selected="accountStore.selected === AccountType.Azure"
-        @click="accountStore.selected = AccountType.Azure"
+        @click="selectAccount(AccountType.Azure)"
         @sign-in="azureContext.signIn"
         @sign-out="azureContext.signOut"
       />
       <AccountListItem
         name="Google"
+        :account="accountStore.google ?? undefined"
         :selected="accountStore.selected === AccountType.Google"
-        @click="accountStore.selected = AccountType.Google"
-        @sign-in="signIn"
+        @click="selectAccount(AccountType.Google)"
+        @sign-in="googleContext.signIn"
+        @sign-out="googleContext.signOut"
       />
     </div>
   </div>
