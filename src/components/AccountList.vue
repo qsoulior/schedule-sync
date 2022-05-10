@@ -3,7 +3,7 @@ import { accountStore, AccountType } from "@/stores/account";
 import { azureStore } from "@/stores/azure";
 import { useAzureAuth } from "@/composables/azure/auth";
 // import { googleStore } from "@/stores/google";
-// import { useGoogleAuth } from "@/composables/google/auth";
+import { signIn } from "@/composables/google/auth";
 import AccountListItem from "@/components/AccountListItem.vue";
 import IconUserCircle from "@/components/icons/IconUserCircle.vue";
 
@@ -30,13 +30,14 @@ if (azureStore.account !== null) {
         :account="azureStore.account?.username"
         :selected="accountStore.selected === AccountType.Azure"
         @click="accountStore.selected = AccountType.Azure"
-        @sign-in="azureContext.signIn()"
-        @sign-out="azureContext.signOut()"
+        @sign-in="azureContext.signIn"
+        @sign-out="azureContext.signOut"
       />
       <AccountListItem
         name="Google"
         :selected="accountStore.selected === AccountType.Google"
         @click="accountStore.selected = AccountType.Google"
+        @sign-in="signIn"
       />
     </div>
   </div>
