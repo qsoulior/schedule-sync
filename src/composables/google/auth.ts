@@ -1,14 +1,5 @@
 import { accountStore, AccountType } from "@/stores/account";
-
-const rootUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-const searchParams = new URLSearchParams({
-  client_id: "",
-  response_type: "id_token token",
-  redirect_uri: "http://localhost:3000",
-  scope: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar",
-});
-
-export const authUrl = rootUrl + "?" + searchParams.toString();
+import { authUrl } from "@/composables/google/authConfig";
 
 async function randomHexString(length = 16) {
   const randomValues = crypto.getRandomValues(new Uint8Array(length));
@@ -45,7 +36,7 @@ function getStoredData(): StoredData | null {
   return storedData;
 }
 
-export async function handleRedirect(): Promise<string | null> {
+async function handleRedirect(): Promise<string | null> {
   const hash = window.location.hash;
   if (hash === "") return null;
 
