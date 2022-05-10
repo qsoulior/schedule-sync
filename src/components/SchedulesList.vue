@@ -9,8 +9,8 @@ import BaseProgressBar from "@/components/BaseProgressBar.vue";
 import IconCalendar from "@/components/icons/IconCalendar.vue";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
-const { statusMessage, createdPercentage, createSchedule } = useAzureGraph();
-const { acquireToken } = useAzureToken();
+const { accessToken, acquireToken } = useAzureToken();
+const { statusMessage, createdPercentage, createSchedule } = useAzureGraph(accessToken);
 
 enum Status {
   Init,
