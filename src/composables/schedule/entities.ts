@@ -1,21 +1,21 @@
-interface EventDate {
+interface ScheduleEventDate {
   start: Date;
   end: Date;
   frequency: "once" | "every" | "throughout";
 }
 
-export interface Event {
+export interface ScheduleEvent {
   title: string;
   teacher: string;
   type: string;
   subgroup: string;
   location: string;
-  dates: EventDate[];
+  dates: ScheduleEventDate[];
 }
 
 export interface Schedule {
   modified: Date;
-  events: Event[];
+  events: ScheduleEvent[];
 }
 
 export interface ScheduleInfo {

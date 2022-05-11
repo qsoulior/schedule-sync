@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from "vue";
-import type { Event as ScheduleEvent } from "@/composables/schedule/entities";
+import type { ScheduleEvent } from "@/composables/schedule/entities";
 import type {
   Calendar,
   CalendarEvent,

@@ -9,11 +9,13 @@ import BaseButton from "@/components/BaseButton.vue";
 import { accountStore, AccountType } from "@/stores/account";
 import BaseProgressBar from "@/components/BaseProgressBar.vue";
 import IconCalendar from "@/components/icons/IconCalendar.vue";
+import { useGoogleCalendar } from "@/composables/google/calendar";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
 const { accessTokenAzure, acquireTokenAzure } = useAzureToken();
 const { accessTokenGoogle, acquireTokenGoogle } = useGoogleToken();
 const { statusMessage, createdPercentage, createSchedule } = useAzureGraph(accessTokenAzure);
+const { testEvent } = useGoogleCalendar(accessTokenGoogle);
 
 enum Status {
   Init,
@@ -28,16 +30,15 @@ async function syncSchedule(group: string): Promise<void> {
   currentStatus.value = Status.Pending;
   try {
     const schedule = await getSchedule(group);
-    let acquireToken;
     if (accountStore.selected === AccountType.Azure) {
-      acquireToken = acquireTokenAzure;
+      await acquireTokenAzure();
+      await createSchedule(group, schedule.events);
     } else if (accountStore.selected === AccountType.Google) {
-      acquireToken = acquireTokenGoogle;
+      await acquireTokenGoogle();
+      await testEvent(group, schedule.events);
     } else {
       return;
     }
-    await acquireToken();
-    await createSchedule(group, schedule.events);
     if (createdPercentage.value === 100) {
       currentStatus.value = Status.Success;
     } else {
