@@ -13,9 +13,9 @@ interface AuthContext {
   signOut(): Promise<void>;
 }
 
-interface TokenContext {
-  accessToken: Ref<string | undefined>;
-  acquireToken(): Promise<void>;
+interface AzureTokenContext {
+  accessTokenAzure: Ref<string | undefined>;
+  acquireTokenAzure(): Promise<void>;
 }
 
 const client = new PublicClientApplication(msalConfig);
@@ -71,7 +71,7 @@ export function useAzureAuth({ popup = false } = {}): AuthContext {
   };
 }
 
-export function useAzureToken({ popup = false } = {}): TokenContext {
+export function useAzureToken({ popup = false } = {}): AzureTokenContext {
   const accessToken = ref<string>();
 
   async function acquireTokenPopup(): Promise<void> {
@@ -108,7 +108,7 @@ export function useAzureToken({ popup = false } = {}): TokenContext {
     }
   }
   return {
-    accessToken,
-    acquireToken: popup ? acquireTokenPopup : acquireTokenRedirect,
+    accessTokenAzure: accessToken,
+    acquireTokenAzure: popup ? acquireTokenPopup : acquireTokenRedirect,
   };
 }
