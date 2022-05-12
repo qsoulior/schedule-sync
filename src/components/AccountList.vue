@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { accountStore, AccountType } from "@/stores/account";
-import { useAzureAuth } from "@/composables/azure/auth";
+import { useAzureAuth } from "@/composables/graph/auth";
 import { useGoogleAuth } from "@/composables/google/auth";
 import AccountListItem from "@/components/AccountListItem.vue";
 import IconUserCircle from "@/components/icons/IconUserCircle.vue";

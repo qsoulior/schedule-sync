@@ -4,7 +4,7 @@ import {
   BrowserAuthError,
   type EndSessionPopupRequest,
 } from "@azure/msal-browser";
-import { loginRequest, msalConfig, silentRequest } from "@/composables/azure/authConfig";
+import { loginRequest, msalConfig, silentRequest } from "@/composables/graph/authConfig";
 import { accountStore, AccountType } from "@/stores/account";
 import { ref, type Ref } from "vue";
 

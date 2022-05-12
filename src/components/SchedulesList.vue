@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useAzureToken } from "@/composables/azure/auth";
+import { useAzureToken } from "@/composables/graph/auth";
 import { useGoogleToken } from "@/composables/google/auth";
-import { useAzureGraph } from "@/composables/azure/graph";
+import { useAzureGraph } from "@/composables/graph/calendar";
 import { useScheduleFetcher } from "@/composables/schedule/fetcher";
 import BaseInput from "@/components/BaseInput.vue";
 import BaseButton from "@/components/BaseButton.vue";

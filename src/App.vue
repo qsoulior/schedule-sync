@@ -2,7 +2,7 @@
 import LayoutHeader from "@/components/LayoutHeader.vue";
 import AccountList from "@/components/AccountList.vue";
 import SchedulesList from "@/components/SchedulesList.vue";
-import { useAzureClient } from "@/composables/azure/auth";
+import { useAzureClient } from "@/composables/graph/auth";
 import { useGoogleClient } from "@/composables/google/auth";
 import { accountStore } from "@/stores/account";
 
