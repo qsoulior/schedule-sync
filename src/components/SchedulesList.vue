@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useAzureToken } from "@/composables/azure/auth";
+import { useGoogleToken } from "@/composables/google/auth";
 import { useAzureGraph } from "@/composables/azure/graph";
 import { useScheduleFetcher } from "@/composables/schedule/fetcher";
 import BaseInput from "@/components/BaseInput.vue";
 import BaseButton from "@/components/BaseButton.vue";
+import { accountStore, AccountType } from "@/stores/account";
 import BaseProgressBar from "@/components/BaseProgressBar.vue";
 import IconCalendar from "@/components/icons/IconCalendar.vue";
+import { useGoogleCalendar } from "@/composables/google/calendar";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
-const { accessToken, acquireToken } = useAzureToken();
-const { statusMessage, createdPercentage, createSchedule } = useAzureGraph(accessToken);
+const { accessTokenAzure, acquireTokenAzure } = useAzureToken();
+const { accessTokenGoogle, acquireTokenGoogle } = useGoogleToken();
+const { statusMessageAzure, createdPercentageAzure, createScheduleAzure } = useAzureGraph(accessTokenAzure);
+const { statusMessageGoogle, createdPercentageGoogle, createScheduleGoogle } = useGoogleCalendar(accessTokenGoogle);
 
 enum Status {
   Init,
@@ -21,12 +26,35 @@ enum Status {
 
 const currentStatus = ref<Status>(Status.Init);
 
+const createdPercentage = computed(() =>
+  accountStore.selected === AccountType.Azure
+    ? createdPercentageAzure.value
+    : accountStore.selected === AccountType.Google
+    ? createdPercentageGoogle.value
+    : undefined
+);
+
+const statusMessage = computed(() =>
+  accountStore.selected === AccountType.Azure
+    ? statusMessageAzure.value
+    : accountStore.selected === AccountType.Google
+    ? statusMessageGoogle.value
+    : ""
+);
+
 async function syncSchedule(group: string): Promise<void> {
   currentStatus.value = Status.Pending;
   try {
-    await acquireToken();
     const schedule = await getSchedule(group);
-    await createSchedule(group, schedule.events);
+    if (accountStore.selected === AccountType.Azure) {
+      await acquireTokenAzure();
+      await createScheduleAzure(group, schedule.events);
+    } else if (accountStore.selected === AccountType.Google) {
+      await acquireTokenGoogle();
+      await createScheduleGoogle(group, schedule.events);
+    } else {
+      return;
+    }
     if (createdPercentage.value === 100) {
       currentStatus.value = Status.Success;
     } else {

@@ -1,5 +1,6 @@
 import { accountStore, AccountType } from "@/stores/account";
 import { authUrl } from "@/composables/google/authConfig";
+import { ref, type Ref } from "vue";
 
 async function randomHexString(length = 16) {
   const randomValues = crypto.getRandomValues(new Uint8Array(length));
@@ -9,11 +10,10 @@ async function randomHexString(length = 16) {
 interface TokenInfo {
   exp: string;
   email: string;
-  nonce: string;
 }
 
-async function getTokenInfo(idToken: string): Promise<TokenInfo> {
-  const response = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${idToken}`, {
+async function getTokenInfo(accessToken: string): Promise<TokenInfo> {
+  const response = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${accessToken}`, {
     method: "GET",
   });
   if (!response.ok) {
@@ -25,8 +25,9 @@ async function getTokenInfo(idToken: string): Promise<TokenInfo> {
 
 interface StoredData {
   state?: string;
-  nonce?: string;
-  username?: string;
+  account?: string;
+  token?: string;
+  exp?: string;
 }
 
 function getStoredData(): StoredData | null {
@@ -50,16 +51,15 @@ async function handleRedirect(): Promise<string | null> {
     return pre.set(key, value);
   }, new Map<string, string>());
 
-  if (storedData.state === undefined || storedData.nonce === undefined) return null;
+  if (storedData.state === undefined) return null;
   if (hashMap.get("state") !== storedData.state) return null;
 
-  const idToken = hashMap.get("id_token");
-  if (idToken === undefined) return null;
+  const accessToken = hashMap.get("access_token");
+  if (accessToken === undefined) return null;
 
-  const tokenInfo = await getTokenInfo(idToken);
-  if (storedData.nonce !== tokenInfo.nonce) return null;
+  const tokenInfo = await getTokenInfo(accessToken);
 
-  sessionStorage.setItem("gis", JSON.stringify({ username: tokenInfo.email }));
+  sessionStorage.setItem("gis", JSON.stringify({ account: tokenInfo.email, token: accessToken, exp: tokenInfo.exp }));
   window.history.replaceState({}, "", "/");
   return tokenInfo.email;
 }
@@ -67,7 +67,7 @@ async function handleRedirect(): Promise<string | null> {
 export function getActiveAccount(): string | null {
   const storedData = getStoredData();
   if (storedData === null) return null;
-  return storedData.username ?? null;
+  return storedData.account ?? null;
 }
 
 interface AuthContext {
@@ -75,16 +75,19 @@ interface AuthContext {
   signOut(): Promise<void>;
 }
 
+async function getAuthUrl(): Promise<URL> {
+  const url = new URL(authUrl);
+  const state = await randomHexString(32);
+  url.searchParams.set("state", state);
+  sessionStorage.setItem("gis", JSON.stringify({ state: state }));
+  return url;
+}
+
 export function useGoogleAuth(): AuthContext {
   accountStore.google = getActiveAccount();
 
   async function signIn(): Promise<void> {
-    const url = new URL(authUrl);
-    const nonce = await randomHexString(16);
-    url.searchParams.set("nonce", nonce);
-    const state = await randomHexString(32);
-    url.searchParams.set("state", state);
-    sessionStorage.setItem("gis", JSON.stringify({ state: state, nonce: nonce }));
+    const url = await getAuthUrl();
     window.location.href = url.toString();
   }
 
@@ -109,4 +112,36 @@ export function useGoogleClient(): void {
       accountStore.selected = AccountType.Google;
     }
   });
+}
+
+async function acquireTokenRedirect(account: string) {
+  const url = await getAuthUrl();
+  url.searchParams.set("login_hint", account);
+  window.location.href = url.toString();
+}
+
+interface GoogleTokenContext {
+  accessTokenGoogle: Ref<string | undefined>;
+  acquireTokenGoogle(): Promise<void>;
+}
+
+export function useGoogleToken(): GoogleTokenContext {
+  const accessToken = ref<string>();
+
+  async function acquireToken() {
+    const storedData = getStoredData();
+    if (storedData && storedData.token && storedData.exp) {
+      if (Date.now() + 10000 < parseInt(storedData.exp) * 1000) {
+        accessToken.value = storedData.token;
+      } else {
+        const account = storedData.account;
+        if (account) acquireTokenRedirect(account);
+      }
+    }
+  }
+
+  return {
+    accessTokenGoogle: accessToken,
+    acquireTokenGoogle: acquireToken,
+  };
 }
