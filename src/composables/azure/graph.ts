@@ -71,10 +71,10 @@ async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]
 }
 
 interface GraphContext {
-  statusMessage: Ref<string>;
-  createdCount: Ref<number>;
-  createdPercentage: Ref<number>;
-  createSchedule(group: string, events: ScheduleEvent[]): Promise<void>;
+  statusMessageAzure: Ref<string>;
+  createdCountAzure: Ref<number>;
+  createdPercentageAzure: Ref<number>;
+  createScheduleAzure(group: string, events: ScheduleEvent[]): Promise<void>;
 }
 
 export function useAzureGraph(accessToken: Ref<string | undefined>): GraphContext {
@@ -150,9 +150,9 @@ export function useAzureGraph(accessToken: Ref<string | undefined>): GraphContex
   }
 
   return {
-    statusMessage,
-    createdCount,
-    createdPercentage,
-    createSchedule,
+    statusMessageAzure: statusMessage,
+    createdCountAzure: createdCount,
+    createdPercentageAzure: createdPercentage,
+    createScheduleAzure: createSchedule,
   };
 }
