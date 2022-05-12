@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import { accountStore, AccountType } from "@/stores/account";
-import { useAzureAuth } from "@/composables/graph/auth";
+import { useGraphAuth } from "@/composables/graph/auth";
 import { useGoogleAuth } from "@/composables/google/auth";
 import AccountListItem from "@/components/AccountListItem.vue";
 import IconUserCircle from "@/components/icons/IconUserCircle.vue";
 
-const azureContext = useAzureAuth();
+const graphContext = useGraphAuth();
 const googleContext = useGoogleAuth();
 
-if (accountStore.azure !== null) {
-  accountStore.selected = AccountType.Azure;
+if (accountStore.graph !== null) {
+  accountStore.selected = AccountType.Graph;
 } else if (accountStore.google !== null) {
   accountStore.selected = AccountType.Google;
 }
 
 function selectAccount(type: AccountType) {
-  if (type === AccountType.Azure && accountStore.azure) {
-    accountStore.selected = AccountType.Azure;
+  if (type === AccountType.Graph && accountStore.graph) {
+    accountStore.selected = AccountType.Graph;
   } else if (type === AccountType.Google && accountStore.google) {
     accountStore.selected = AccountType.Google;
   }
@@ -34,11 +34,11 @@ function selectAccount(type: AccountType) {
     <div class="flex flex-col gap-y-3">
       <AccountListItem
         name="Outlook"
-        :account="accountStore.azure?.username"
-        :selected="accountStore.selected === AccountType.Azure"
-        @click="selectAccount(AccountType.Azure)"
-        @sign-in="azureContext.signIn"
-        @sign-out="azureContext.signOut"
+        :account="accountStore.graph?.username"
+        :selected="accountStore.selected === AccountType.Graph"
+        @click="selectAccount(AccountType.Graph)"
+        @sign-in="graphContext.signIn"
+        @sign-out="graphContext.signOut"
       />
       <AccountListItem
         name="Google"

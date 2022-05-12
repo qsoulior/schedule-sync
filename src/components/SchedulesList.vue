@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useAzureToken } from "@/composables/graph/auth";
+import { useGraphToken } from "@/composables/graph/auth";
 import { useGoogleToken } from "@/composables/google/auth";
-import { useAzureGraph } from "@/composables/graph/calendar";
+import { useGraphCalendar } from "@/composables/graph/calendar";
 import { useScheduleFetcher } from "@/composables/schedule/fetcher";
 import BaseInput from "@/components/BaseInput.vue";
 import BaseButton from "@/components/BaseButton.vue";
@@ -12,9 +12,9 @@ import IconCalendar from "@/components/icons/IconCalendar.vue";
 import { useGoogleCalendar } from "@/composables/google/calendar";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
-const { accessTokenAzure, acquireTokenAzure } = useAzureToken();
+const { accessTokenGraph, acquireTokenGraph } = useGraphToken();
 const { accessTokenGoogle, acquireTokenGoogle } = useGoogleToken();
-const { statusMessageAzure, createdPercentageAzure, createScheduleAzure } = useAzureGraph(accessTokenAzure);
+const { statusMessageGraph, createdPercentageGraph, createScheduleGraph } = useGraphCalendar(accessTokenGraph);
 const { statusMessageGoogle, createdPercentageGoogle, createScheduleGoogle } = useGoogleCalendar(accessTokenGoogle);
 
 enum Status {
@@ -27,16 +27,16 @@ enum Status {
 const currentStatus = ref<Status>(Status.Init);
 
 const createdPercentage = computed(() =>
-  accountStore.selected === AccountType.Azure
-    ? createdPercentageAzure.value
+  accountStore.selected === AccountType.Graph
+    ? createdPercentageGraph.value
     : accountStore.selected === AccountType.Google
     ? createdPercentageGoogle.value
     : undefined
 );
 
 const statusMessage = computed(() =>
-  accountStore.selected === AccountType.Azure
-    ? statusMessageAzure.value
+  accountStore.selected === AccountType.Graph
+    ? statusMessageGraph.value
     : accountStore.selected === AccountType.Google
     ? statusMessageGoogle.value
     : ""
@@ -46,9 +46,9 @@ async function syncSchedule(group: string): Promise<void> {
   currentStatus.value = Status.Pending;
   try {
     const schedule = await getSchedule(group);
-    if (accountStore.selected === AccountType.Azure) {
-      await acquireTokenAzure();
-      await createScheduleAzure(group, schedule.events);
+    if (accountStore.selected === AccountType.Graph) {
+      await acquireTokenGraph();
+      await createScheduleGraph(group, schedule.events);
     } else if (accountStore.selected === AccountType.Google) {
       await acquireTokenGoogle();
       await createScheduleGoogle(group, schedule.events);

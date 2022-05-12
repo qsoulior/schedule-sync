@@ -8,36 +8,31 @@ import { loginRequest, msalConfig, silentRequest } from "@/composables/graph/aut
 import { accountStore, AccountType } from "@/stores/account";
 import { ref, type Ref } from "vue";
 
+const client = new PublicClientApplication(msalConfig);
+
+export function useGraphClient(): void {
+  client.handleRedirectPromise().then((result) => {
+    if (result !== null) {
+      client.setActiveAccount(result.account);
+      accountStore.graph = result.account;
+      accountStore.selected = AccountType.Graph;
+    }
+  });
+}
+
 interface AuthContext {
   signIn(): Promise<void>;
   signOut(): Promise<void>;
 }
 
-interface AzureTokenContext {
-  accessTokenAzure: Ref<string | undefined>;
-  acquireTokenAzure(): Promise<void>;
-}
-
-const client = new PublicClientApplication(msalConfig);
-
-export function useAzureClient(): void {
-  client.handleRedirectPromise().then((result) => {
-    if (result !== null) {
-      client.setActiveAccount(result.account);
-      accountStore.azure = result.account;
-      accountStore.selected = AccountType.Azure;
-    }
-  });
-}
-
-export function useAzureAuth({ popup = false } = {}): AuthContext {
-  accountStore.azure = client.getActiveAccount();
+export function useGraphAuth({ popup = false } = {}): AuthContext {
+  accountStore.graph = client.getActiveAccount();
   async function signInPopup(): Promise<void> {
     try {
       const result = await client.loginPopup(loginRequest);
       client.setActiveAccount(result.account);
-      accountStore.azure = result.account;
-      accountStore.selected = AccountType.Azure;
+      accountStore.graph = result.account;
+      accountStore.selected = AccountType.Graph;
     } catch (error) {
       if (error instanceof BrowserAuthError) {
         alert(error.errorMessage);
@@ -51,17 +46,17 @@ export function useAzureAuth({ popup = false } = {}): AuthContext {
 
   async function signOutPopup(): Promise<void> {
     const logoutRequest: EndSessionPopupRequest = {
-      account: accountStore.azure,
+      account: accountStore.graph,
     };
     await client.logoutPopup(logoutRequest);
-    accountStore.azure = null;
+    accountStore.graph = null;
   }
 
   async function signOutRedirect(): Promise<void> {
     await client.logoutRedirect({
       onRedirectNavigate: () => false,
     });
-    accountStore.azure = null;
+    accountStore.graph = null;
     accountStore.selected = undefined;
   }
 
@@ -71,7 +66,12 @@ export function useAzureAuth({ popup = false } = {}): AuthContext {
   };
 }
 
-export function useAzureToken({ popup = false } = {}): AzureTokenContext {
+interface TokenContext {
+  accessTokenGraph: Ref<string | undefined>;
+  acquireTokenGraph(): Promise<void>;
+}
+
+export function useGraphToken({ popup = false } = {}): TokenContext {
   const accessToken = ref<string>();
 
   async function acquireTokenPopup(): Promise<void> {
@@ -108,7 +108,7 @@ export function useAzureToken({ popup = false } = {}): AzureTokenContext {
     }
   }
   return {
-    accessTokenAzure: accessToken,
-    acquireTokenAzure: popup ? acquireTokenPopup : acquireTokenRedirect,
+    accessTokenGraph: accessToken,
+    acquireTokenGraph: popup ? acquireTokenPopup : acquireTokenRedirect,
   };
 }

@@ -70,14 +70,14 @@ async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]
   return events;
 }
 
-interface GraphContext {
-  statusMessageAzure: Ref<string>;
-  createdCountAzure: Ref<number>;
-  createdPercentageAzure: Ref<number>;
-  createScheduleAzure(group: string, events: ScheduleEvent[]): Promise<void>;
+interface CalendarContext {
+  statusMessageGraph: Ref<string>;
+  createdCountGraph: Ref<number>;
+  createdPercentageGraph: Ref<number>;
+  createScheduleGraph(group: string, events: ScheduleEvent[]): Promise<void>;
 }
 
-export function useAzureGraph(accessToken: Ref<string | undefined>): GraphContext {
+export function useGraphCalendar(accessToken: Ref<string | undefined>): CalendarContext {
   const graphAPI = computed<CalendarAPI | null>(() => (accessToken.value ? new CalendarAPI(accessToken.value) : null));
   const tokenError = new Error("accessToken is null");
 
@@ -150,9 +150,9 @@ export function useAzureGraph(accessToken: Ref<string | undefined>): GraphContex
   }
 
   return {
-    statusMessageAzure: statusMessage,
-    createdCountAzure: createdCount,
-    createdPercentageAzure: createdPercentage,
-    createScheduleAzure: createSchedule,
+    statusMessageGraph: statusMessage,
+    createdCountGraph: createdCount,
+    createdPercentageGraph: createdPercentage,
+    createScheduleGraph: createSchedule,
   };
 }

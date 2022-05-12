@@ -70,17 +70,17 @@ export function getActiveAccount(): string | null {
   return storedData.account ?? null;
 }
 
-interface AuthContext {
-  signIn(): Promise<void>;
-  signOut(): Promise<void>;
-}
-
 async function getAuthUrl(): Promise<URL> {
   const url = new URL(authUrl);
   const state = await randomHexString(32);
   url.searchParams.set("state", state);
   sessionStorage.setItem("gis", JSON.stringify({ state: state }));
   return url;
+}
+
+interface AuthContext {
+  signIn(): Promise<void>;
+  signOut(): Promise<void>;
 }
 
 export function useGoogleAuth(): AuthContext {
@@ -120,12 +120,12 @@ async function acquireTokenRedirect(account: string) {
   window.location.href = url.toString();
 }
 
-interface GoogleTokenContext {
+interface TokenContext {
   accessTokenGoogle: Ref<string | undefined>;
   acquireTokenGoogle(): Promise<void>;
 }
 
-export function useGoogleToken(): GoogleTokenContext {
+export function useGoogleToken(): TokenContext {
   const accessToken = ref<string>();
 
   async function acquireToken() {
