@@ -48,9 +48,11 @@ async function syncSchedule(group: string): Promise<void> {
     const schedule = await getSchedule(group);
     if (accountStore.selected === AccountType.Graph) {
       await graphTokenContext.acquireToken();
+      if (graphTokenContext.accessToken.value === undefined) return;
       await graphCalendarContext.createSchedule(group, schedule.events);
     } else if (accountStore.selected === AccountType.Google) {
       await googleTokenContext.acquireToken();
+      if (googleTokenContext.accessToken.value === undefined) return;
       await googleCalendarContext.createSchedule(group, schedule.events);
     } else {
       return;
