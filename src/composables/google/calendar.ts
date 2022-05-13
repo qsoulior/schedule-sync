@@ -2,13 +2,18 @@ import { ref, computed, type Ref } from "vue";
 import type { ScheduleEvent } from "@/composables/schedule/entities";
 import { CalendarAPI } from "@/composables/google/calendarAPI";
 import type { CalendarEvent, CalendarDateTime, Calendar } from "@/composables/google/calendarEntities";
+import type { CalendarContext } from "@/composables/context";
 
 async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]> {
   const events: CalendarEvent[] = [];
 
-  const summary = `${scheduleEvent.title} (${
-    scheduleEvent.type === "lecture" ? "Лекция" : scheduleEvent.type === "seminar" ? "Семинар" : "Лабораторная работа"
-  })`;
+  const summary = `${scheduleEvent.title} — ${
+    scheduleEvent.type === "lecture"
+      ? "Лекция"
+      : scheduleEvent.type === "seminar"
+      ? "Семинар"
+      : `Лабораторная работа (${scheduleEvent.subgroup})`
+  }`;
 
   let start: CalendarDateTime, end: CalendarDateTime, recurrence: string[] | undefined;
 
@@ -42,13 +47,6 @@ async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]
   }
 
   return events;
-}
-
-interface CalendarContext {
-  statusMessageGoogle: Ref<string>;
-  createdCountGoogle: Ref<number>;
-  createdPercentageGoogle: Ref<number>;
-  createScheduleGoogle(group: string, events: ScheduleEvent[]): Promise<void>;
 }
 
 export function useGoogleCalendar(accessToken: Ref<string | undefined>): CalendarContext {
@@ -105,9 +103,9 @@ export function useGoogleCalendar(accessToken: Ref<string | undefined>): Calenda
   }
 
   return {
-    statusMessageGoogle: statusMessage,
-    createdCountGoogle: createdCount,
-    createdPercentageGoogle: createdPercentage,
-    createScheduleGoogle: createSchedule,
+    statusMessage,
+    createdCount,
+    createdPercentage,
+    createSchedule,
   };
 }

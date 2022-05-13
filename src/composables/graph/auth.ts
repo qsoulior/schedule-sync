@@ -6,7 +6,8 @@ import {
 } from "@azure/msal-browser";
 import { loginRequest, msalConfig, silentRequest } from "@/composables/graph/authConfig";
 import { accountStore, AccountType } from "@/stores/account";
-import { ref, type Ref } from "vue";
+import { ref } from "vue";
+import type { AuthContext, TokenContext } from "@/composables/context";
 
 const client = new PublicClientApplication(msalConfig);
 
@@ -18,11 +19,6 @@ export function useGraphClient(): void {
       accountStore.selected = AccountType.Graph;
     }
   });
-}
-
-interface AuthContext {
-  signIn(): Promise<void>;
-  signOut(): Promise<void>;
 }
 
 export function useGraphAuth({ popup = false } = {}): AuthContext {
@@ -66,11 +62,6 @@ export function useGraphAuth({ popup = false } = {}): AuthContext {
   };
 }
 
-interface TokenContext {
-  accessTokenGraph: Ref<string | undefined>;
-  acquireTokenGraph(): Promise<void>;
-}
-
 export function useGraphToken({ popup = false } = {}): TokenContext {
   const accessToken = ref<string>();
 
@@ -108,7 +99,7 @@ export function useGraphToken({ popup = false } = {}): TokenContext {
     }
   }
   return {
-    accessTokenGraph: accessToken,
-    acquireTokenGraph: popup ? acquireTokenPopup : acquireTokenRedirect,
+    accessToken,
+    acquireToken: popup ? acquireTokenPopup : acquireTokenRedirect,
   };
 }

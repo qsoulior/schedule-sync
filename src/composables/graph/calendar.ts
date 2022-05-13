@@ -10,15 +10,20 @@ import type {
   CalendarEventRecurrence,
 } from "@/composables/graph/calendarEntities";
 import { CalendarAPI, type BatchRequest } from "@/composables/graph/calendarAPI";
+import type { CalendarContext } from "@/composables/context";
 
 const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]> {
   const events: CalendarEvent[] = [];
 
-  const subject = `${scheduleEvent.title} (${
-    scheduleEvent.type === "lecture" ? "Лекция" : scheduleEvent.type === "seminar" ? "Семинар" : "Лабораторная работа"
-  })`;
+  const subject = `${scheduleEvent.title} — ${
+    scheduleEvent.type === "lecture"
+      ? "Лекция"
+      : scheduleEvent.type === "seminar"
+      ? "Семинар"
+      : `Лабораторная работа (${scheduleEvent.subgroup})`
+  }`;
   const body: CalendarEventBody = {
     contentType: "text",
     content: scheduleEvent.teacher,
@@ -68,13 +73,6 @@ async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]
   }
 
   return events;
-}
-
-interface CalendarContext {
-  statusMessageGraph: Ref<string>;
-  createdCountGraph: Ref<number>;
-  createdPercentageGraph: Ref<number>;
-  createScheduleGraph(group: string, events: ScheduleEvent[]): Promise<void>;
 }
 
 export function useGraphCalendar(accessToken: Ref<string | undefined>): CalendarContext {
@@ -150,9 +148,9 @@ export function useGraphCalendar(accessToken: Ref<string | undefined>): Calendar
   }
 
   return {
-    statusMessageGraph: statusMessage,
-    createdCountGraph: createdCount,
-    createdPercentageGraph: createdPercentage,
-    createScheduleGraph: createSchedule,
+    statusMessage,
+    createdCount,
+    createdPercentage,
+    createSchedule,
   };
 }

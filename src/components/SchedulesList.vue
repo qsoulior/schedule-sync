@@ -12,10 +12,10 @@ import IconCalendar from "@/components/icons/IconCalendar.vue";
 import { useGoogleCalendar } from "@/composables/google/calendar";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
-const { accessTokenGraph, acquireTokenGraph } = useGraphToken();
-const { accessTokenGoogle, acquireTokenGoogle } = useGoogleToken();
-const { statusMessageGraph, createdPercentageGraph, createScheduleGraph } = useGraphCalendar(accessTokenGraph);
-const { statusMessageGoogle, createdPercentageGoogle, createScheduleGoogle } = useGoogleCalendar(accessTokenGoogle);
+const graphTokenContext = useGraphToken();
+const googleTokenContext = useGoogleToken();
+const graphCalendarContext = useGraphCalendar(graphTokenContext.accessToken);
+const googleCalendarContext = useGoogleCalendar(googleTokenContext.accessToken);
 
 enum Status {
   Init,
@@ -28,17 +28,17 @@ const currentStatus = ref<Status>(Status.Init);
 
 const createdPercentage = computed(() =>
   accountStore.selected === AccountType.Graph
-    ? createdPercentageGraph.value
+    ? graphCalendarContext.createdPercentage.value
     : accountStore.selected === AccountType.Google
-    ? createdPercentageGoogle.value
+    ? googleCalendarContext.createdPercentage.value
     : undefined
 );
 
 const statusMessage = computed(() =>
   accountStore.selected === AccountType.Graph
-    ? statusMessageGraph.value
+    ? graphCalendarContext.statusMessage.value
     : accountStore.selected === AccountType.Google
-    ? statusMessageGoogle.value
+    ? googleCalendarContext.statusMessage.value
     : ""
 );
 
@@ -47,11 +47,11 @@ async function syncSchedule(group: string): Promise<void> {
   try {
     const schedule = await getSchedule(group);
     if (accountStore.selected === AccountType.Graph) {
-      await acquireTokenGraph();
-      await createScheduleGraph(group, schedule.events);
+      await graphTokenContext.acquireToken();
+      await graphCalendarContext.createSchedule(group, schedule.events);
     } else if (accountStore.selected === AccountType.Google) {
-      await acquireTokenGoogle();
-      await createScheduleGoogle(group, schedule.events);
+      await googleTokenContext.acquireToken();
+      await googleCalendarContext.createSchedule(group, schedule.events);
     } else {
       return;
     }

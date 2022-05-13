@@ -5,8 +5,8 @@ import { useGoogleAuth } from "@/composables/google/auth";
 import AccountListItem from "@/components/AccountListItem.vue";
 import IconUserCircle from "@/components/icons/IconUserCircle.vue";
 
-const graphContext = useGraphAuth();
-const googleContext = useGoogleAuth();
+const graphAuthContext = useGraphAuth();
+const googleAuthContext = useGoogleAuth();
 
 if (accountStore.graph !== null) {
   accountStore.selected = AccountType.Graph;
@@ -37,16 +37,16 @@ function selectAccount(type: AccountType) {
         :account="accountStore.graph?.username"
         :selected="accountStore.selected === AccountType.Graph"
         @click="selectAccount(AccountType.Graph)"
-        @sign-in="graphContext.signIn"
-        @sign-out="graphContext.signOut"
+        @sign-in="graphAuthContext.signIn"
+        @sign-out="graphAuthContext.signOut"
       />
       <AccountListItem
         name="Google"
         :account="accountStore.google ?? undefined"
         :selected="accountStore.selected === AccountType.Google"
         @click="selectAccount(AccountType.Google)"
-        @sign-in="googleContext.signIn"
-        @sign-out="googleContext.signOut"
+        @sign-in="googleAuthContext.signIn"
+        @sign-out="googleAuthContext.signOut"
       />
     </div>
   </div>
