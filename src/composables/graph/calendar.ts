@@ -111,16 +111,14 @@ export function useGraphCalendar(accessToken: Ref<string | undefined>): Calendar
         method: "POST",
         url: `/me/calendars/${calendarId}/events`,
         body: event,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
       if (batchRequests.length === 4 || i === events.length - 1) {
         const batchResponses = await graphAPI.value.batch(batchRequests);
+        batchRequests.length = 0;
         for (const batchResponse of batchResponses) {
           if (batchResponse.status === 201) createdCount.value++;
         }
-        batchRequests.length = 0; // empty array
       }
     }
   }

@@ -30,10 +30,10 @@ export class CalendarAPI extends API {
   }
 
   async getCalendars(): Promise<Calendar[]> {
-    const body: { items: Calendar[] } = await this.sendRequest("/users/me/calendarList?fields=items(id,summary)", {
+    const result = await this.sendRequest<{ items: Calendar[] }>("/users/me/calendarList?fields=items(id,summary)", {
       method: "GET",
     });
-    return body.items;
+    return result.body.items;
   }
 
   async getCalendar(summary: string): Promise<Calendar | null> {
@@ -42,20 +42,20 @@ export class CalendarAPI extends API {
   }
 
   async createCalendar(summary: string): Promise<Calendar> {
-    const body: Calendar = await this.sendRequest("/calendars", {
+    const result = await this.sendRequest<Calendar>("/calendars", {
       method: "POST",
       body: { summary, timeZone: "Europe/Moscow" },
     });
-    return body;
+    return result.body;
   }
 
-  async deleteCalendar(calendarId: string): Promise<void> {
+  async deleteCalendar(calendarId: string) {
     return this.sendRequest(`/calendars/${calendarId}`, {
       method: "DELETE",
     });
   }
 
-  async createEvent(event: CalendarEvent, calendarId: string): Promise<void> {
+  async createEvent(event: CalendarEvent, calendarId: string) {
     return this.sendRequest(`/calendars/${calendarId}/events`, {
       method: "POST",
       body: event,

@@ -4,7 +4,7 @@ import {
   type CalendarEvent,
   type CalendarGroup,
 } from "@/composables/graph/calendarEntities";
-import { API } from "@/composables/api";
+import { API, type ResponseResult } from "@/composables/api";
 
 export interface BatchRequest {
   id: string;
@@ -52,65 +52,101 @@ export class CalendarAPI extends API {
     }
   }
 
-  async batch(requests: BatchRequest[]): Promise<BatchResponse[]> {
-    const body: { responses: BatchResponse[] } = await this.sendRequest("/$batch", {
+  async batch(requests: BatchRequest[]): Promise<ResponseResult<unknown>[]> {
+    const result = await this.sendRequest<{ responses: BatchResponse[] }>("/$batch", {
       method: "POST",
       body: { requests: requests },
     });
 
-    return body.responses;
+    const results: ResponseResult<unknown>[] = [];
+    const errors: string[] = [];
+
+    for (const response of result.body.responses) {
+      if (response.status === 429 || response.status >= 500) {
+        errors.push(response.id);
+      } else {
+        results.push({
+          status: response.status,
+          body: response.body,
+          headers: response.headers,
+        });
+      }
+    }
+
+    for (const request of requests) {
+      if (errors.includes(request.id)) {
+        try {
+          const result = await this.sendRequest<unknown>(this.baseURL + request.url, {
+            method: request.method,
+            headers: request.headers,
+            body: request.body,
+          });
+          results.push({
+            status: result.status,
+            headers: result.headers,
+            body: result.body,
+          });
+        } catch (error) {
+          if (error instanceof CalendarError) {
+            results.push({ status: error.status, body: undefined });
+          }
+        }
+      }
+    }
+
+    return results;
   }
 
   async getCalendarGroup(name: string): Promise<CalendarGroup | null> {
-    const body: { value: CalendarGroup[] } = await this.sendRequest(`/me/calendarGroups?$filter=name eq '${name}'`, {
+    const result = await this.sendRequest<{ value: CalendarGroup[] }>(`/me/calendarGroups?$filter=name eq '${name}'`, {
       method: "GET",
     });
 
-    if (body.value.length > 0) {
-      return body.value[0];
+    if (result.body.value.length > 0) {
+      return result.body.value[0];
     }
     return null;
   }
 
   async createCalendarGroup(name: string): Promise<CalendarGroup> {
-    const body: CalendarGroup = await this.sendRequest("/me/calendarGroups", {
+    const result = await this.sendRequest<CalendarGroup>("/me/calendarGroups", {
       method: "POST",
       body: { name: name },
     });
 
-    return body;
+    return result.body;
   }
 
   async getCalendar(name: string, groupId: string): Promise<Calendar | null> {
-    const body: { value: Calendar[] } = await this.sendRequest(
+    const result = await this.sendRequest<{ value: Calendar[] }>(
       `/me/calendarGroups/${groupId}/calendars?$filter=name eq '${name}'`,
       {
         method: "GET",
       }
     );
 
-    if (body.value.length > 0) {
-      return body.value[0];
+    if (result.body.value.length > 0) {
+      return result.body.value[0];
     }
     return null;
   }
 
   async createCalendar(name: string, groupId: string): Promise<Calendar> {
-    const body: Calendar = await this.sendRequest(`/me/calendarGroups/${groupId}/calendars`, {
+    const result = await this.sendRequest<Calendar>(`/me/calendarGroups/${groupId}/calendars`, {
       method: "POST",
       body: { name: name },
     });
 
-    return body;
+    return result.body;
   }
 
-  async deleteCalendar(groupId: string, calendarId: string): Promise<void> {
+  async deleteCalendar(groupId: string, calendarId: string) {
     return this.sendRequest(`/me/calendarGroups/${groupId}/calendars/${calendarId}`, {
       method: "DELETE",
     });
   }
 
-  async createEvent(event: CalendarEvent, calendarId: string): Promise<void> {
+  async createEvent(event: CalendarEvent, calendarId: string) {
     return this.sendRequest(`/me/calendars/${calendarId}/events`, {
       method: "POST",
       body: event,

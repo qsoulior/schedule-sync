@@ -1,10 +1,16 @@
 export interface RequestConfig {
   method: "GET" | "POST" | "DELETE" | "PATCH" | "PUT";
   body?: unknown;
-  headers?: Headers;
+  headers?: Headers | Record<string, string>;
 }
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export interface ResponseResult<T> {
+  status: number;
+  body: T;
+  headers?: HeadersInit;
+}
 
 export abstract class API {
   private accessToken: string;
@@ -21,9 +27,10 @@ export abstract class API {
 
   protected abstract handleError(response: Response): Promise<Error>;
 
-  async sendRequest(endpoint: string, config: RequestConfig) {
+  async sendRequest<T = undefined>(endpoint: string, config: RequestConfig): Promise<ResponseResult<T>> {
     const headers = new Headers(this.headers);
-    config.headers?.forEach((value, key) => headers.append(key, value));
+    const configHeaders = new Headers(config.headers);
+    configHeaders.forEach((value, key) => headers.append(key, value));
 
     let error,
       delay = 1,
@@ -36,8 +43,8 @@ export abstract class API {
       });
 
       if (response.ok) {
-        const body = await response.json();
-        return body;
+        const body: T = await response.json();
+        return { status: response.status, body: body, headers: response.headers };
       }
 
       error = await this.handleError(response);
