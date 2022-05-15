@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from "vue";
+import { computed, ref } from "vue";
 import type { ScheduleEvent } from "@/composables/schedule/entities";
 import type {
   Calendar,
@@ -10,6 +10,7 @@ import type {
   CalendarEventRecurrence,
 } from "@/composables/graph/calendarEntities";
 import { CalendarAPI, type BatchRequest } from "@/composables/graph/calendarAPI";
+import { useGraphToken } from "@/composables/graph/auth";
 import type { CalendarContext } from "@/composables/context";
 
 const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -75,7 +76,9 @@ async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]
   return events;
 }
 
-export function useGraphCalendar(accessToken: Ref<string | undefined>): CalendarContext {
+export function useGraphCalendar(): CalendarContext {
+  const { accessToken, acquireToken } = useGraphToken();
+
   const graphAPI = computed<CalendarAPI | null>(() => (accessToken.value ? new CalendarAPI(accessToken.value) : null));
   const tokenError = new Error("accessToken is null");
 
@@ -120,6 +123,9 @@ export function useGraphCalendar(accessToken: Ref<string | undefined>): Calendar
   }
 
   async function createSchedule(group: string, events: ScheduleEvent[]): Promise<void> {
+    await acquireToken();
+    if (accessToken.value === undefined) return;
+
     const calendarEvents: CalendarEvent[] = [];
     for (const event of events) {
       const calendarEventsPart = await parseEvent(event);

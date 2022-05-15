@@ -1,8 +1,9 @@
-import { ref, computed, type Ref } from "vue";
+import { ref, computed } from "vue";
 import type { ScheduleEvent } from "@/composables/schedule/entities";
 import { CalendarAPI } from "@/composables/google/calendarAPI";
 import type { CalendarEvent, CalendarDateTime, Calendar } from "@/composables/google/calendarEntities";
 import type { CalendarContext } from "@/composables/context";
+import { useGoogleToken } from "@/composables/google/auth";
 
 async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]> {
   const events: CalendarEvent[] = [];
@@ -49,7 +50,9 @@ async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]
   return events;
 }
 
-export function useGoogleCalendar(accessToken: Ref<string | undefined>): CalendarContext {
+export function useGoogleCalendar(): CalendarContext {
+  const { accessToken, acquireToken } = useGoogleToken();
+
   const calendarAPI = computed<CalendarAPI | null>(() =>
     accessToken.value ? new CalendarAPI(accessToken.value) : null
   );
@@ -77,6 +80,9 @@ export function useGoogleCalendar(accessToken: Ref<string | undefined>): Calenda
   }
 
   async function createSchedule(group: string, events: ScheduleEvent[]): Promise<void> {
+    await acquireToken();
+    if (accessToken.value === undefined) return;
+
     const calendarEvents: CalendarEvent[] = [];
     for (const event of events) {
       const calendarEventsPart = await parseEvent(event);

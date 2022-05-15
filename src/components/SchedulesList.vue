@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
-import { useGraphToken } from "@/composables/graph/auth";
-import { useGoogleToken } from "@/composables/google/auth";
 import { useGraphCalendar } from "@/composables/graph/calendar";
 import { useScheduleFetcher } from "@/composables/schedule/fetcher";
 import BaseInput from "@/components/BaseInput.vue";
@@ -13,15 +11,12 @@ import { useGoogleCalendar } from "@/composables/google/calendar";
 import { StatusMessage } from "@/composables/context";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
-const graphTokenContext = useGraphToken();
-const googleTokenContext = useGoogleToken();
-const graphCalendarContext = reactive(useGraphCalendar(graphTokenContext.accessToken));
-const googleCalendarContext = reactive(useGoogleCalendar(googleTokenContext.accessToken));
+
+const graphCalendarContext = reactive(useGraphCalendar());
+const googleCalendarContext = reactive(useGoogleCalendar());
 
 const context = computed(() =>
-  accountStore.selected === AccountType.Graph
-    ? { ...graphTokenContext, ...graphCalendarContext }
-    : { ...googleTokenContext, ...googleCalendarContext }
+  accountStore.selected === AccountType.Graph ? { ...graphCalendarContext } : { ...googleCalendarContext }
 );
 
 const createdPercentage = computed(() =>
@@ -41,7 +36,6 @@ async function syncSchedule(group: string): Promise<void> {
     statusMessage.value = StatusMessage.Pending;
     const schedule = await getSchedule(group);
     if (context.value === undefined) return;
-    await context.value.acquireToken();
     await context.value.createSchedule(group, schedule.events);
     if (context.value.createdCount === context.value.parsedCount) {
       statusMessage.value = StatusMessage.Success;
