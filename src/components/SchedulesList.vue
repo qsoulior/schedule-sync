@@ -1,40 +1,49 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useAzureToken } from "@/composables/azure/auth";
-import { useAzureGraph } from "@/composables/azure/graph";
+import { computed, reactive, ref } from "vue";
+import { useGraphCalendar } from "@/composables/graph/calendar";
 import { useScheduleFetcher } from "@/composables/schedule/fetcher";
 import BaseInput from "@/components/BaseInput.vue";
 import BaseButton from "@/components/BaseButton.vue";
+import { accountStore, AccountType } from "@/stores/account";
 import BaseProgressBar from "@/components/BaseProgressBar.vue";
 import IconCalendar from "@/components/icons/IconCalendar.vue";
+import { useGoogleCalendar } from "@/composables/google/calendar";
+import { StatusMessage } from "@/composables/context";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
-const { statusMessage, createdPercentage, createSchedule } = useAzureGraph();
-const { acquireToken } = useAzureToken();
 
-enum Status {
-  Init,
-  Pending,
-  Success,
-  Error,
+const graphCalendarContext = reactive(useGraphCalendar());
+const googleCalendarContext = reactive(useGoogleCalendar());
+
+const context = computed(() =>
+  accountStore.selected === AccountType.Graph ? { ...graphCalendarContext } : { ...googleCalendarContext }
+);
+
+const createdPercentage = computed(() =>
+  context.value.parsedCount === 0 ? 0 : (context.value.createdCount / context.value.parsedCount) * 100
+);
+
+const statusMessage = ref<StatusMessage>();
+
+async function resetStatus() {
+  statusMessage.value = undefined;
+  context.value.parsedCount = 0;
+  context.value.createdCount = 0;
 }
 
-const currentStatus = ref<Status>(Status.Init);
-
 async function syncSchedule(group: string): Promise<void> {
-  currentStatus.value = Status.Pending;
   try {
-    await acquireToken();
+    statusMessage.value = StatusMessage.Pending;
     const schedule = await getSchedule(group);
-    await createSchedule(group, schedule.events);
-    if (createdPercentage.value === 100) {
-      currentStatus.value = Status.Success;
+    if (context.value === undefined) return;
+    await context.value.createSchedule(group, schedule.events);
+    if (context.value.createdCount === context.value.parsedCount) {
+      statusMessage.value = StatusMessage.Success;
     } else {
-      currentStatus.value = Status.Error;
+      statusMessage.value = StatusMessage.Error;
     }
   } catch (error) {
     console.log(error);
-    currentStatus.value = Status.Error;
   }
 }
 </script>
@@ -50,11 +59,11 @@ async function syncSchedule(group: string): Promise<void> {
         class="w-full"
         type="search"
         placeholder="Название группы"
-        :disabled="currentStatus !== Status.Init"
+        :disabled="statusMessage !== undefined"
         v-model="searchedGroup"
       />
     </form>
-    <div v-if="currentStatus === Status.Init">
+    <div v-if="statusMessage === undefined">
       <div v-if="filteredSchedulesInfo.length > 0" class="flex flex-wrap gap-3">
         <BaseButton
           class="px-4 py-2 flex-1"
@@ -71,7 +80,7 @@ async function syncSchedule(group: string): Promise<void> {
     <div v-else>
       <BaseProgressBar :percentage="createdPercentage" />
       <div class="mb-5">{{ statusMessage }}</div>
-      <BaseButton v-if="currentStatus === Status.Success" class="px-4 py-1.5" @click="currentStatus = Status.Init">
+      <BaseButton v-if="statusMessage === StatusMessage.Success" class="px-4 py-1.5" @click="resetStatus">
         Вернуться ко всем расписаниям
       </BaseButton>
     </div>

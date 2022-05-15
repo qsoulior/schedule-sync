@@ -1,19 +1,26 @@
 <script setup lang="ts">
 import { accountStore, AccountType } from "@/stores/account";
-import { azureStore } from "@/stores/azure";
-import { useAzureAuth } from "@/composables/azure/auth";
-// import { googleStore } from "@/stores/google";
-// import { useGoogleAuth } from "@/composables/google/auth";
+import { useGraphAuth } from "@/composables/graph/auth";
+import { useGoogleAuth } from "@/composables/google/auth";
 import AccountListItem from "@/components/AccountListItem.vue";
 import IconUserCircle from "@/components/icons/IconUserCircle.vue";
 
-const azureContext = useAzureAuth();
-// const googleContext = useGoogleAuth();
+const graphAuthContext = useGraphAuth();
+const googleAuthContext = useGoogleAuth();
 
-if (azureStore.account !== null) {
-  accountStore.selected = AccountType.Azure;
+if (accountStore.graph !== null) {
+  accountStore.selected = AccountType.Graph;
+} else if (accountStore.google !== null) {
+  accountStore.selected = AccountType.Google;
 }
-// else if (googleStore.account !== null)
+
+function selectAccount(type: AccountType) {
+  if (type === AccountType.Graph && accountStore.graph) {
+    accountStore.selected = AccountType.Graph;
+  } else if (type === AccountType.Google && accountStore.google) {
+    accountStore.selected = AccountType.Google;
+  }
+}
 </script>
 
 <template>
@@ -27,16 +34,19 @@ if (azureStore.account !== null) {
     <div class="flex flex-col gap-y-3">
       <AccountListItem
         name="Outlook"
-        :account="azureStore.account?.username"
-        :selected="accountStore.selected === AccountType.Azure"
-        @click="accountStore.selected = AccountType.Azure"
-        @sign-in="azureContext.signIn()"
-        @sign-out="azureContext.signOut()"
+        :account="accountStore.graph?.username"
+        :selected="accountStore.selected === AccountType.Graph"
+        @click="selectAccount(AccountType.Graph)"
+        @sign-in="graphAuthContext.signIn"
+        @sign-out="graphAuthContext.signOut"
       />
       <AccountListItem
         name="Google"
+        :account="accountStore.google ?? undefined"
         :selected="accountStore.selected === AccountType.Google"
-        @click="accountStore.selected = AccountType.Google"
+        @click="selectAccount(AccountType.Google)"
+        @sign-in="googleAuthContext.signIn"
+        @sign-out="googleAuthContext.signOut"
       />
     </div>
   </div>
