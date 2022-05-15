@@ -1,6 +1,7 @@
 import { accountStore, AccountType } from "@/stores/account";
 import { authUrl } from "@/composables/google/authConfig";
-import { ref, type Ref } from "vue";
+import { ref } from "vue";
+import type { AuthContext, TokenContext } from "@/composables/context";
 
 async function randomHexString(length = 16) {
   const randomValues = crypto.getRandomValues(new Uint8Array(length));
@@ -70,11 +71,6 @@ export function getActiveAccount(): string | null {
   return storedData.account ?? null;
 }
 
-interface AuthContext {
-  signIn(): Promise<void>;
-  signOut(): Promise<void>;
-}
-
 async function getAuthUrl(): Promise<URL> {
   const url = new URL(authUrl);
   const state = await randomHexString(32);
@@ -120,12 +116,7 @@ async function acquireTokenRedirect(account: string) {
   window.location.href = url.toString();
 }
 
-interface GoogleTokenContext {
-  accessTokenGoogle: Ref<string | undefined>;
-  acquireTokenGoogle(): Promise<void>;
-}
-
-export function useGoogleToken(): GoogleTokenContext {
+export function useGoogleToken(): TokenContext {
   const accessToken = ref<string>();
 
   async function acquireToken() {
@@ -141,7 +132,7 @@ export function useGoogleToken(): GoogleTokenContext {
   }
 
   return {
-    accessTokenGoogle: accessToken,
-    acquireTokenGoogle: acquireToken,
+    accessToken,
+    acquireToken,
   };
 }

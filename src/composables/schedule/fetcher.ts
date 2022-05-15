@@ -15,10 +15,7 @@ export function useScheduleFetcher(): FetcherContext {
     try {
       const response = await fetch("https://schdl.herokuapp.com/api/info", {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_MANAGER_API_TOKEN}`,
-        },
+        headers: { "Content-Type": "application/json" },
       });
       const responseText = await response.text();
       schedulesInfo.value = JSON.parse(responseText, (key, value) => (key === "modified" ? new Date(value) : value));
@@ -45,10 +42,7 @@ export function useScheduleFetcher(): FetcherContext {
 
     const response = await fetch(`https://schdl.herokuapp.com/api/schedules?group=${group}&newest=1`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_MANAGER_API_TOKEN}`,
-      },
+      headers: { "Content-Type": "application/json" },
     });
     if (response.status === 400) {
       const errorText = await response.text();

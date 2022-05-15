@@ -1,4 +1,5 @@
 import { type CalendarEvent, type Calendar, apiEndpoints } from "@/composables/google/calendarEntities";
+import { API } from "@/composables/api";
 
 export class CalendarError extends Error {
   code: number;
@@ -15,58 +16,24 @@ interface ErrorBody {
   };
 }
 
-interface RequestConfig {
-  method: "GET" | "POST" | "DELETE" | "PATCH" | "PUT";
-  body?: unknown;
-  headers?: Headers;
-}
+export class CalendarAPI extends API {
+  protected baseURL = apiEndpoints.calendar;
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export class CalendarAPI {
-  private accessToken: string;
-  private headers: Headers;
-
-  constructor(accessToken: string) {
-    this.accessToken = accessToken;
-    this.headers = new Headers({
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${this.accessToken}`,
-    });
-  }
-
-  private async sendRequest(endpoint: string, config: RequestConfig) {
-    let delay = 1;
-    let error: CalendarError;
-    do {
-      const response = await fetch(apiEndpoints.calendar + endpoint, {
-        method: config.method,
-        headers: this.headers,
-        body: JSON.stringify(config.body),
-      });
-
-      if (response.ok) {
-        const body = await response.json();
-        return body;
-      }
-
-      const body: ErrorBody = await response.json();
-      error = new CalendarError(body.error.message, body.error.code);
-      if (error.code === 403 || error.code === 429 || error.code >= 500) {
-        await sleep((delay + Math.random()) * 1000);
-        delay *= 2;
-      } else {
-        throw error;
-      }
-    } while (delay <= 16);
-    throw error;
+  protected async handleError(response: Response) {
+    const body: ErrorBody = await response.json();
+    const error = new CalendarError(body.error.message, body.error.code);
+    if (error.code === 403 || error.code === 408 || error.code === 429 || error.code >= 500) {
+      return error;
+    } else {
+      throw error;
+    }
   }
 
   async getCalendars(): Promise<Calendar[]> {
-    const body: { items: Calendar[] } = await this.sendRequest("/users/me/calendarList?fields=items(id,summary)", {
+    const result = await this.sendRequest<{ items: Calendar[] }>("/users/me/calendarList?fields=items(id,summary)", {
       method: "GET",
     });
-    return body.items;
+    return result.body.items;
   }
 
   async getCalendar(summary: string): Promise<Calendar | null> {
@@ -75,20 +42,20 @@ export class CalendarAPI {
   }
 
   async createCalendar(summary: string): Promise<Calendar> {
-    const body: Calendar = await this.sendRequest("/calendars", {
+    const result = await this.sendRequest<Calendar>("/calendars", {
       method: "POST",
       body: { summary, timeZone: "Europe/Moscow" },
     });
-    return body;
+    return result.body;
   }
 
-  async deleteCalendar(calendarId: string): Promise<void> {
+  async deleteCalendar(calendarId: string) {
     return this.sendRequest(`/calendars/${calendarId}`, {
       method: "DELETE",
     });
   }
 
-  async createEvent(event: CalendarEvent, calendarId: string): Promise<void> {
+  async createEvent(event: CalendarEvent, calendarId: string) {
     return this.sendRequest(`/calendars/${calendarId}/events`, {
       method: "POST",
       body: event,

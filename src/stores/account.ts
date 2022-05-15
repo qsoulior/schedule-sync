@@ -2,17 +2,17 @@ import { reactive } from "vue";
 import type { AccountInfo } from "@azure/msal-common";
 
 export enum AccountType {
-  Azure,
+  Graph,
   Google,
 }
 
 interface State {
-  azure: AccountInfo | null;
+  graph: AccountInfo | null;
   google: string | null;
   selected?: AccountType;
 }
 
 export const accountStore = reactive<State>({
-  azure: null,
+  graph: null,
   google: null,
 });
