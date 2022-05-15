@@ -10,7 +10,7 @@ import type {
   CalendarEventRecurrence,
 } from "@/composables/graph/calendarEntities";
 import { CalendarAPI, type BatchRequest } from "@/composables/graph/calendarAPI";
-import type { CalendarContext } from "@/composables/context";
+import { StatusMessage, type CalendarContext } from "@/composables/context";
 
 const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
@@ -95,60 +95,65 @@ export function useGraphCalendar(accessToken: Ref<string | undefined>): Calendar
     return calendar;
   }
 
-  const statusMessage = ref<string>("");
+  const statusMessage = ref<StatusMessage>();
   const parsedCount = ref<number>(0);
   const createdCount = ref<number>(0);
-  const createdPercentage = computed<number>(() =>
-    parsedCount.value === 0 ? 0 : (createdCount.value / parsedCount.value) * 100
-  );
 
   async function createEvents(events: CalendarEvent[], calendarId: string): Promise<void> {
     if (graphAPI.value === null) throw tokenError;
-    const batchRequests: BatchRequest[] = [];
+    const requests: BatchRequest[] = [];
     for (const [i, event] of events.entries()) {
-      batchRequests.push({
-        id: batchRequests.length.toString(),
+      requests.push({
+        id: requests.length.toString(),
         method: "POST",
         url: `/me/calendars/${calendarId}/events`,
         body: event,
         headers: { "Content-Type": "application/json" },
       });
-      if (batchRequests.length === 4 || i === events.length - 1) {
-        const batchResponses = await graphAPI.value.batch(batchRequests);
-        batchRequests.length = 0;
-        for (const batchResponse of batchResponses) {
-          if (batchResponse.status === 201) createdCount.value++;
+      if (requests.length === 4 || i === events.length - 1) {
+        const responses = await graphAPI.value.batch(requests);
+        requests.length = 0;
+        for (const response of responses) {
+          if (response.status === 201) createdCount.value++;
         }
       }
     }
   }
 
   async function createSchedule(group: string, events: ScheduleEvent[]): Promise<void> {
-    parsedCount.value = 0;
-    createdCount.value = 0;
-    if (graphAPI.value === null) throw tokenError;
-    statusMessage.value = "Создание календаря";
-    const calendar = await createCalendar(group, "Расписания");
+    await resetStatus();
+
+    statusMessage.value = StatusMessage.Parsing;
     const calendarEvents: CalendarEvent[] = [];
-    statusMessage.value = "Подготовка расписания";
     for (const event of events) {
       const calendarEventsPart = await parseEvent(event);
       calendarEvents.push(...calendarEventsPart);
     }
     parsedCount.value = calendarEvents.length;
-    statusMessage.value = "Загрузка расписания";
+    parsedCount.value = calendarEvents.length;
+
+    statusMessage.value = StatusMessage.Creating;
+    const calendar = await createCalendar(group, "Расписания");
     await createEvents(calendarEvents, calendar.id);
+
     if (createdCount.value === parsedCount.value) {
-      statusMessage.value = "Расписание загружено";
+      statusMessage.value = StatusMessage.Success;
     } else {
-      statusMessage.value = "Ошибка загрузки расписания";
+      statusMessage.value = StatusMessage.Error;
     }
+  }
+
+  async function resetStatus() {
+    statusMessage.value = undefined;
+    parsedCount.value = 0;
+    createdCount.value = 0;
   }
 
   return {
     statusMessage,
     createdCount,
-    createdPercentage,
+    parsedCount,
     createSchedule,
+    resetStatus,
   };
 }

@@ -2,7 +2,7 @@ import { ref, computed, type Ref } from "vue";
 import type { ScheduleEvent } from "@/composables/schedule/entities";
 import { CalendarAPI } from "@/composables/google/calendarAPI";
 import type { CalendarEvent, CalendarDateTime, Calendar } from "@/composables/google/calendarEntities";
-import type { CalendarContext } from "@/composables/context";
+import { StatusMessage, type CalendarContext } from "@/composables/context";
 
 async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]> {
   const events: CalendarEvent[] = [];
@@ -65,12 +65,9 @@ export function useGoogleCalendar(accessToken: Ref<string | undefined>): Calenda
     return calendar;
   }
 
-  const statusMessage = ref<string>("");
+  const statusMessage = ref<StatusMessage>();
   const parsedCount = ref<number>(0);
   const createdCount = ref<number>(0);
-  const createdPercentage = computed<number>(() =>
-    parsedCount.value === 0 ? 0 : (createdCount.value / parsedCount.value) * 100
-  );
 
   async function createEvents(events: CalendarEvent[], calendarId: string): Promise<void> {
     if (calendarAPI.value === null) throw tokenError;
@@ -83,29 +80,37 @@ export function useGoogleCalendar(accessToken: Ref<string | undefined>): Calenda
   async function createSchedule(group: string, events: ScheduleEvent[]): Promise<void> {
     parsedCount.value = 0;
     createdCount.value = 0;
-    if (calendarAPI.value === null) throw tokenError;
-    statusMessage.value = "Создание календаря";
-    const calendar = await createCalendar(group);
+
+    statusMessage.value = StatusMessage.Parsing;
     const calendarEvents: CalendarEvent[] = [];
-    statusMessage.value = "Подготовка расписания";
     for (const event of events) {
       const calendarEventsPart = await parseEvent(event);
       calendarEvents.push(...calendarEventsPart);
     }
     parsedCount.value = calendarEvents.length;
-    statusMessage.value = "Загрузка расписания";
+
+    statusMessage.value = StatusMessage.Creating;
+    const calendar = await createCalendar(group);
     await createEvents(calendarEvents, calendar.id);
+
     if (createdCount.value === parsedCount.value) {
-      statusMessage.value = "Расписание загружено";
+      statusMessage.value = StatusMessage.Success;
     } else {
-      statusMessage.value = "Ошибка загрузки расписания";
+      statusMessage.value = StatusMessage.Error;
     }
+  }
+
+  async function resetStatus() {
+    statusMessage.value = undefined;
+    parsedCount.value = 0;
+    createdCount.value = 0;
   }
 
   return {
     statusMessage,
     createdCount,
-    createdPercentage,
+    parsedCount,
     createSchedule,
+    resetStatus,
   };
 }

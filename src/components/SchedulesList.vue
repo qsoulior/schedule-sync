@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, reactive } from "vue";
 import { useGraphToken } from "@/composables/graph/auth";
 import { useGoogleToken } from "@/composables/google/auth";
 import { useGraphCalendar } from "@/composables/graph/calendar";
@@ -10,61 +10,32 @@ import { accountStore, AccountType } from "@/stores/account";
 import BaseProgressBar from "@/components/BaseProgressBar.vue";
 import IconCalendar from "@/components/icons/IconCalendar.vue";
 import { useGoogleCalendar } from "@/composables/google/calendar";
+import { StatusMessage } from "@/composables/context";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
 const graphTokenContext = useGraphToken();
 const googleTokenContext = useGoogleToken();
-const graphCalendarContext = useGraphCalendar(graphTokenContext.accessToken);
-const googleCalendarContext = useGoogleCalendar(googleTokenContext.accessToken);
+const graphCalendarContext = reactive(useGraphCalendar(graphTokenContext.accessToken));
+const googleCalendarContext = reactive(useGoogleCalendar(googleTokenContext.accessToken));
 
-enum Status {
-  Init,
-  Pending,
-  Success,
-  Error,
-}
-
-const currentStatus = ref<Status>(Status.Init);
-
-const createdPercentage = computed(() =>
+const context = computed(() =>
   accountStore.selected === AccountType.Graph
-    ? graphCalendarContext.createdPercentage.value
-    : accountStore.selected === AccountType.Google
-    ? googleCalendarContext.createdPercentage.value
-    : undefined
+    ? { ...graphTokenContext, ...graphCalendarContext }
+    : { ...googleTokenContext, ...googleCalendarContext }
 );
 
-const statusMessage = computed(() =>
-  accountStore.selected === AccountType.Graph
-    ? graphCalendarContext.statusMessage.value
-    : accountStore.selected === AccountType.Google
-    ? googleCalendarContext.statusMessage.value
-    : ""
+const createdPercentage = computed(() =>
+  context.value.parsedCount === 0 ? 0 : (context.value.createdCount / context.value.parsedCount) * 100
 );
 
 async function syncSchedule(group: string): Promise<void> {
-  currentStatus.value = Status.Pending;
   try {
     const schedule = await getSchedule(group);
-    if (accountStore.selected === AccountType.Graph) {
-      await graphTokenContext.acquireToken();
-      if (graphTokenContext.accessToken.value === undefined) return;
-      await graphCalendarContext.createSchedule(group, schedule.events);
-    } else if (accountStore.selected === AccountType.Google) {
-      await googleTokenContext.acquireToken();
-      if (googleTokenContext.accessToken.value === undefined) return;
-      await googleCalendarContext.createSchedule(group, schedule.events);
-    } else {
-      return;
-    }
-    if (createdPercentage.value === 100) {
-      currentStatus.value = Status.Success;
-    } else {
-      currentStatus.value = Status.Error;
-    }
+    if (context.value === undefined) return;
+    await context.value.acquireToken();
+    await context.value.createSchedule(group, schedule.events);
   } catch (error) {
     console.log(error);
-    currentStatus.value = Status.Error;
   }
 }
 </script>
@@ -80,11 +51,11 @@ async function syncSchedule(group: string): Promise<void> {
         class="w-full"
         type="search"
         placeholder="Название группы"
-        :disabled="currentStatus !== Status.Init"
+        :disabled="context.statusMessage !== undefined"
         v-model="searchedGroup"
       />
     </form>
-    <div v-if="currentStatus === Status.Init">
+    <div v-if="context.statusMessage === undefined">
       <div v-if="filteredSchedulesInfo.length > 0" class="flex flex-wrap gap-3">
         <BaseButton
           class="px-4 py-2 flex-1"
@@ -100,8 +71,12 @@ async function syncSchedule(group: string): Promise<void> {
     </div>
     <div v-else>
       <BaseProgressBar :percentage="createdPercentage" />
-      <div class="mb-5">{{ statusMessage }}</div>
-      <BaseButton v-if="currentStatus === Status.Success" class="px-4 py-1.5" @click="currentStatus = Status.Init">
+      <div class="mb-5">{{ context.statusMessage }}</div>
+      <BaseButton
+        v-if="context.statusMessage === StatusMessage.Success"
+        class="px-4 py-1.5"
+        @click="context.resetStatus"
+      >
         Вернуться ко всем расписаниям
       </BaseButton>
     </div>

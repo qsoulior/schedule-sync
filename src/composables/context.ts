@@ -11,9 +11,17 @@ export interface TokenContext {
   acquireToken(): Promise<void>;
 }
 
+export enum StatusMessage {
+  Parsing = "Подготовка расписания",
+  Creating = "Загрузка расписания",
+  Success = "Расписание успешно загружено",
+  Error = "Ошибка загрузки расписания",
+}
+
 export interface CalendarContext {
-  statusMessage: Ref<string>;
+  statusMessage: Ref<StatusMessage | undefined>;
   createdCount: Ref<number>;
-  createdPercentage: Ref<number>;
+  parsedCount: Ref<number>;
   createSchedule(group: string, events: ScheduleEvent[]): Promise<void>;
+  resetStatus(): Promise<void>;
 }
