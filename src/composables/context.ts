@@ -12,16 +12,13 @@ export interface TokenContext {
 }
 
 export enum StatusMessage {
-  Parsing = "Подготовка расписания",
-  Creating = "Загрузка расписания",
+  Pending = "Загрузка расписания",
   Success = "Расписание успешно загружено",
   Error = "Ошибка загрузки расписания",
 }
 
 export interface CalendarContext {
-  statusMessage: Ref<StatusMessage | undefined>;
   createdCount: Ref<number>;
   parsedCount: Ref<number>;
   createSchedule(group: string, events: ScheduleEvent[]): Promise<void>;
-  resetStatus(): Promise<void>;
 }

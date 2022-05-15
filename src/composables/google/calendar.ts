@@ -2,7 +2,7 @@ import { ref, computed, type Ref } from "vue";
 import type { ScheduleEvent } from "@/composables/schedule/entities";
 import { CalendarAPI } from "@/composables/google/calendarAPI";
 import type { CalendarEvent, CalendarDateTime, Calendar } from "@/composables/google/calendarEntities";
-import { StatusMessage, type CalendarContext } from "@/composables/context";
+import type { CalendarContext } from "@/composables/context";
 
 async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]> {
   const events: CalendarEvent[] = [];
@@ -65,7 +65,6 @@ export function useGoogleCalendar(accessToken: Ref<string | undefined>): Calenda
     return calendar;
   }
 
-  const statusMessage = ref<StatusMessage>();
   const parsedCount = ref<number>(0);
   const createdCount = ref<number>(0);
 
@@ -78,10 +77,6 @@ export function useGoogleCalendar(accessToken: Ref<string | undefined>): Calenda
   }
 
   async function createSchedule(group: string, events: ScheduleEvent[]): Promise<void> {
-    parsedCount.value = 0;
-    createdCount.value = 0;
-
-    statusMessage.value = StatusMessage.Parsing;
     const calendarEvents: CalendarEvent[] = [];
     for (const event of events) {
       const calendarEventsPart = await parseEvent(event);
@@ -89,28 +84,13 @@ export function useGoogleCalendar(accessToken: Ref<string | undefined>): Calenda
     }
     parsedCount.value = calendarEvents.length;
 
-    statusMessage.value = StatusMessage.Creating;
     const calendar = await createCalendar(group);
     await createEvents(calendarEvents, calendar.id);
-
-    if (createdCount.value === parsedCount.value) {
-      statusMessage.value = StatusMessage.Success;
-    } else {
-      statusMessage.value = StatusMessage.Error;
-    }
-  }
-
-  async function resetStatus() {
-    statusMessage.value = undefined;
-    parsedCount.value = 0;
-    createdCount.value = 0;
   }
 
   return {
-    statusMessage,
     createdCount,
     parsedCount,
     createSchedule,
-    resetStatus,
   };
 }

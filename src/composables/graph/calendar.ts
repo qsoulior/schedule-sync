@@ -10,7 +10,7 @@ import type {
   CalendarEventRecurrence,
 } from "@/composables/graph/calendarEntities";
 import { CalendarAPI, type BatchRequest } from "@/composables/graph/calendarAPI";
-import { StatusMessage, type CalendarContext } from "@/composables/context";
+import type { CalendarContext } from "@/composables/context";
 
 const daysOfWeek: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
@@ -95,7 +95,6 @@ export function useGraphCalendar(accessToken: Ref<string | undefined>): Calendar
     return calendar;
   }
 
-  const statusMessage = ref<StatusMessage>();
   const parsedCount = ref<number>(0);
   const createdCount = ref<number>(0);
 
@@ -121,39 +120,20 @@ export function useGraphCalendar(accessToken: Ref<string | undefined>): Calendar
   }
 
   async function createSchedule(group: string, events: ScheduleEvent[]): Promise<void> {
-    await resetStatus();
-
-    statusMessage.value = StatusMessage.Parsing;
     const calendarEvents: CalendarEvent[] = [];
     for (const event of events) {
       const calendarEventsPart = await parseEvent(event);
       calendarEvents.push(...calendarEventsPart);
     }
     parsedCount.value = calendarEvents.length;
-    parsedCount.value = calendarEvents.length;
 
-    statusMessage.value = StatusMessage.Creating;
     const calendar = await createCalendar(group, "Расписания");
     await createEvents(calendarEvents, calendar.id);
-
-    if (createdCount.value === parsedCount.value) {
-      statusMessage.value = StatusMessage.Success;
-    } else {
-      statusMessage.value = StatusMessage.Error;
-    }
-  }
-
-  async function resetStatus() {
-    statusMessage.value = undefined;
-    parsedCount.value = 0;
-    createdCount.value = 0;
   }
 
   return {
-    statusMessage,
     createdCount,
     parsedCount,
     createSchedule,
-    resetStatus,
   };
 }

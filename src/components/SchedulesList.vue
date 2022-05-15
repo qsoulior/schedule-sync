@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive } from "vue";
+import { computed, reactive, ref } from "vue";
 import { useGraphToken } from "@/composables/graph/auth";
 import { useGoogleToken } from "@/composables/google/auth";
 import { useGraphCalendar } from "@/composables/graph/calendar";
@@ -28,12 +28,26 @@ const createdPercentage = computed(() =>
   context.value.parsedCount === 0 ? 0 : (context.value.createdCount / context.value.parsedCount) * 100
 );
 
+const statusMessage = ref<StatusMessage>();
+
+async function resetStatus() {
+  statusMessage.value = undefined;
+  context.value.parsedCount = 0;
+  context.value.createdCount = 0;
+}
+
 async function syncSchedule(group: string): Promise<void> {
   try {
+    statusMessage.value = StatusMessage.Pending;
     const schedule = await getSchedule(group);
     if (context.value === undefined) return;
     await context.value.acquireToken();
     await context.value.createSchedule(group, schedule.events);
+    if (context.value.createdCount === context.value.parsedCount) {
+      statusMessage.value = StatusMessage.Success;
+    } else {
+      statusMessage.value = StatusMessage.Error;
+    }
   } catch (error) {
     console.log(error);
   }
@@ -51,11 +65,11 @@ async function syncSchedule(group: string): Promise<void> {
         class="w-full"
         type="search"
         placeholder="Название группы"
-        :disabled="context.statusMessage !== undefined"
+        :disabled="statusMessage !== undefined"
         v-model="searchedGroup"
       />
     </form>
-    <div v-if="context.statusMessage === undefined">
+    <div v-if="statusMessage === undefined">
       <div v-if="filteredSchedulesInfo.length > 0" class="flex flex-wrap gap-3">
         <BaseButton
           class="px-4 py-2 flex-1"
@@ -71,12 +85,8 @@ async function syncSchedule(group: string): Promise<void> {
     </div>
     <div v-else>
       <BaseProgressBar :percentage="createdPercentage" />
-      <div class="mb-5">{{ context.statusMessage }}</div>
-      <BaseButton
-        v-if="context.statusMessage === StatusMessage.Success"
-        class="px-4 py-1.5"
-        @click="context.resetStatus"
-      >
+      <div class="mb-5">{{ statusMessage }}</div>
+      <BaseButton v-if="statusMessage === StatusMessage.Success" class="px-4 py-1.5" @click="resetStatus">
         Вернуться ко всем расписаниям
       </BaseButton>
     </div>
