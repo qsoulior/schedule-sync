@@ -42,14 +42,14 @@ function setTheme(theme: Theme) {
     <div class="flex items-center gap-3">
       <button>
         <IconSun
-          class="hover:dark:stroke-sky-300 hover:stroke-sky-400 w-5 h-5"
+          class="hover:dark:stroke-sky-300 hover:stroke-sky-400 w-6 h-6"
           v-if="currentTheme === Theme.Dark"
           @click="setTheme(Theme.Light)"
         />
-        <IconMoon class="hover:dark:stroke-sky-300 hover:stroke-sky-400 w-5 h-5" v-else @click="setTheme(Theme.Dark)" />
+        <IconMoon class="hover:dark:stroke-sky-300 hover:stroke-sky-400 w-6 h-6" v-else @click="setTheme(Theme.Dark)" />
       </button>
       <a href="https://github.com/1asagne/schedule-sync" target="_blank">
-        <IconGithub class="h-7 w-7 hover:dark:fill-sky-300 hover:fill-sky-400" />
+        <IconGithub class="h-8 w-8 hover:dark:fill-sky-300 hover:fill-sky-400" />
       </a>
     </div>
   </header>

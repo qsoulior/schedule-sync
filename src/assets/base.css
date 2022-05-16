@@ -2,15 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-  @apply overflow-y-scroll;
-}
+@layer base {
+  @font-face {
+    font-family: Manrope;
+    font-display: swap;
+    font-weight: 400;
+    font-style: normal;
+    src: url("/fonts/manrope-regular.woff2") format("woff2"), url("/fonts/manrope-regular.woff") format("woff");
+  }
 
-body {
-  @apply font-sans;
-  @apply dark:bg-zinc-900 bg-white dark:text-gray-200 text-zinc-900;
-  @apply transition-colors;
-  min-height: 100vh;
-  line-height: 1.6;
-  font-size: 15px;
+  html {
+    font-family: Manrope, sans-serif;
+    font-size: 15px;
+    @apply leading-[1.6];
+    @apply overflow-y-scroll;
+  }
+
+  body {
+    @apply dark:bg-zinc-900 bg-white dark:text-gray-200 text-zinc-900;
+    @apply transition-colors;
+  }
+
+  button {
+    @apply focus:outline-none;
+  }
 }
