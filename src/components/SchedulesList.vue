@@ -9,6 +9,7 @@ import BaseProgressBar from "@/components/BaseProgressBar.vue";
 import IconCalendar from "@/components/icons/IconCalendar.vue";
 import { useGoogleCalendar } from "@/composables/google/calendar";
 import { StatusMessage } from "@/composables/context";
+import { ApiError } from "@/composables/api";
 
 const { schedulesInfo, filteredSchedulesInfo, searchedGroup, getSchedule } = useScheduleFetcher();
 
@@ -16,7 +17,7 @@ const graphCalendarContext = reactive(useGraphCalendar());
 const googleCalendarContext = reactive(useGoogleCalendar());
 
 const context = computed(() =>
-  accountStore.selected === AccountType.Graph ? { ...graphCalendarContext } : { ...googleCalendarContext }
+  accountStore.selected === AccountType.Graph ? graphCalendarContext : googleCalendarContext
 );
 
 const createdPercentage = computed(() =>
@@ -24,9 +25,11 @@ const createdPercentage = computed(() =>
 );
 
 const statusMessage = ref<StatusMessage>();
+const errorMessage = ref<string>();
 
 async function resetStatus() {
   statusMessage.value = undefined;
+  errorMessage.value = undefined;
   context.value.parsedCount = 0;
   context.value.createdCount = 0;
 }
@@ -41,9 +44,29 @@ async function syncSchedule(group: string): Promise<void> {
       statusMessage.value = StatusMessage.Success;
     } else {
       statusMessage.value = StatusMessage.Error;
+      errorMessage.value === "Некоторые расписания не были загружены. Удалите календарь и повторите попытку.";
     }
   } catch (error) {
-    console.log(error);
+    statusMessage.value = StatusMessage.Error;
+    if (error instanceof ApiError) {
+      if (error.status === "insufficientPermissions" || error.status === "accessDenied") {
+        errorMessage.value = "Недостаточно прав для работы с календарем. Предоставьте разрешения при входе в аккаунт.";
+      } else if (error.code === 401) {
+        errorMessage.value = "Не удалось выполнить аутентификацию. Попробуйте перезайти в свой аккаунт.";
+      } else if (
+        error.code === 429 ||
+        error.status === "userRateLimitExceeded" ||
+        error.status === "rateLimitExceeded" ||
+        error.status === "quotaExceeded" ||
+        error.status === "activityLimitReached"
+      ) {
+        errorMessage.value = "Вы превысили допустимое количество запросов. Попробуйте выполнить синхронизацию позже.";
+      } else {
+        errorMessage.value = "Непредвиденная ошибка. Попробуйте выполнить синхронизацию позже.";
+      }
+    } else if (error instanceof Error) {
+      errorMessage.value = error.message;
+    }
   }
 }
 </script>
@@ -54,6 +77,8 @@ async function syncSchedule(group: string): Promise<void> {
       <IconCalendar class="h-5 w-5 dark:stroke-sky-300 stroke-sky-400" />
       <div>Расписания ({{ filteredSchedulesInfo.length }}/{{ schedulesInfo.length }})</div>
     </div>
+    {{ context.parsedCount }}
+    {{ context.createdCount }}
     <form class="mb-5 w-full" @submit.prevent>
       <BaseInput
         class="w-full"
@@ -80,7 +105,8 @@ async function syncSchedule(group: string): Promise<void> {
     <div v-else>
       <BaseProgressBar :percentage="createdPercentage" />
       <div class="mb-5">{{ statusMessage }}</div>
-      <BaseButton v-if="statusMessage === StatusMessage.Success" class="px-4 py-1.5" @click="resetStatus">
+      <div v-if="statusMessage === StatusMessage.Error" class="text-red-600 dark:text-red-400">{{ errorMessage }}</div>
+      <BaseButton v-if="statusMessage !== StatusMessage.Pending" class="px-4 py-1.5 mt-7" @click="resetStatus">
         Вернуться ко всем расписаниям
       </BaseButton>
     </div>

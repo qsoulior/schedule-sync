@@ -8,6 +8,7 @@ import type {
   GraphLocation,
   GraphDateTime,
   CalendarEventRecurrence,
+  CalendarGroup,
 } from "@/composables/graph/calendarEntities";
 import { CalendarAPI, type BatchRequest } from "@/composables/graph/calendarAPI";
 import { useGraphToken } from "@/composables/graph/auth";
@@ -79,30 +80,35 @@ async function parseEvent(scheduleEvent: ScheduleEvent): Promise<CalendarEvent[]
 export function useGraphCalendar(): CalendarContext {
   const { accessToken, acquireToken } = useGraphToken();
 
-  const graphAPI = computed<CalendarAPI | null>(() => (accessToken.value ? new CalendarAPI(accessToken.value) : null));
+  const calendarAPI = computed<CalendarAPI | null>(() =>
+    accessToken.value ? new CalendarAPI(accessToken.value) : null
+  );
   const tokenError = new Error("accessToken is null");
 
-  async function createCalendar(name: string, groupName: string): Promise<Calendar> {
-    if (graphAPI.value === null) throw tokenError;
-    let calendarGroup = await graphAPI.value.getCalendarGroup(groupName);
+  async function createCalendar(
+    name: string,
+    groupName: string
+  ): Promise<{ calendar: Calendar; calendarGroup: CalendarGroup }> {
+    if (calendarAPI.value === null) throw tokenError;
+    let calendarGroup = await calendarAPI.value.getCalendarGroup(groupName);
     let calendar: Calendar | null;
     if (calendarGroup === null) {
-      calendarGroup = await graphAPI.value.createCalendarGroup(groupName);
-      calendar = await graphAPI.value.createCalendar(name, calendarGroup.id);
-      return calendar;
+      calendarGroup = await calendarAPI.value.createCalendarGroup(groupName);
+      calendar = await calendarAPI.value.createCalendar(name, calendarGroup.id);
+      return { calendar, calendarGroup };
     }
-    calendar = await graphAPI.value.getCalendar(name, calendarGroup.id);
+    calendar = await calendarAPI.value.getCalendar(name, calendarGroup.id);
     if (calendar === null) {
-      calendar = await graphAPI.value.createCalendar(name, calendarGroup.id);
+      calendar = await calendarAPI.value.createCalendar(name, calendarGroup.id);
     }
-    return calendar;
+    return { calendar, calendarGroup };
   }
 
   const parsedCount = ref<number>(0);
   const createdCount = ref<number>(0);
 
   async function createEvents(events: CalendarEvent[], calendarId: string): Promise<void> {
-    if (graphAPI.value === null) throw tokenError;
+    if (calendarAPI.value === null) throw tokenError;
     const requests: BatchRequest[] = [];
     for (const [i, event] of events.entries()) {
       requests.push({
@@ -113,7 +119,7 @@ export function useGraphCalendar(): CalendarContext {
         headers: { "Content-Type": "application/json" },
       });
       if (requests.length === 4 || i === events.length - 1) {
-        const responses = await graphAPI.value.batch(requests);
+        const responses = await calendarAPI.value.batch(requests);
         requests.length = 0;
         for (const response of responses) {
           if (response.status === 201) createdCount.value++;
@@ -133,8 +139,12 @@ export function useGraphCalendar(): CalendarContext {
     }
     parsedCount.value = calendarEvents.length;
 
-    const calendar = await createCalendar(group, "Расписания");
-    await createEvents(calendarEvents, calendar.id);
+    const { calendar, calendarGroup } = await createCalendar(group, "Расписания");
+    try {
+      await createEvents(calendarEvents, calendar.id);
+    } catch (error) {
+      await calendarAPI.value?.deleteCalendar(calendarGroup.id, calendar.id);
+    }
   }
 
   return {

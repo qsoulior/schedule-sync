@@ -4,7 +4,7 @@ import {
   type CalendarEvent,
   type CalendarGroup,
 } from "@/composables/graph/calendarEntities";
-import { API, type ResponseResult } from "@/composables/api";
+import { API, ApiError, type ResponseResult } from "@/composables/api";
 
 export interface BatchRequest {
   id: string;
@@ -22,13 +22,10 @@ export interface BatchResponse {
   body?: unknown;
 }
 
-export class CalendarError extends Error {
-  status: number;
-  code: string;
-  constructor(message: string, status: number, code: string) {
-    super(message);
-    this.status = status;
-    this.code = code;
+export class CalendarError extends ApiError {
+  constructor(message: string, code: number, status: string) {
+    super(message, code, status);
+    this.name = "GraphCalendarError";
   }
 }
 
@@ -45,7 +42,7 @@ export class CalendarAPI extends API {
   protected async handleError(response: Response) {
     const body: ErrorBody = await response.json();
     const error = new CalendarError(body.error.message, response.status, body.error.code);
-    if (error.status === 429 || error.status >= 500) {
+    if (error.code === 429 || error.code >= 500) {
       return error;
     } else {
       throw error;
@@ -88,7 +85,7 @@ export class CalendarAPI extends API {
           });
         } catch (error) {
           if (error instanceof CalendarError) {
-            results.push({ status: error.status, body: undefined });
+            results.push({ status: error.code, body: undefined });
           }
         }
       }

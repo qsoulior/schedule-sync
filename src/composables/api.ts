@@ -6,6 +6,17 @@ export interface RequestConfig {
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+export class ApiError extends Error {
+  code: number;
+  status: string;
+  constructor(message: string, code: number, status: string) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+    this.status = status;
+  }
+}
+
 export interface ResponseResult<T> {
   status: number;
   body: T;

@@ -1,11 +1,10 @@
 import { type CalendarEvent, type Calendar, apiEndpoints } from "@/composables/google/calendarEntities";
-import { API } from "@/composables/api";
+import { API, ApiError } from "@/composables/api";
 
-export class CalendarError extends Error {
-  code: number;
-  constructor(message: string, code: number) {
-    super(message);
-    this.code = code;
+export class CalendarError extends ApiError {
+  constructor(message: string, code: number, status: string) {
+    super(message, code, status);
+    this.name = "GoogleCalendarError";
   }
 }
 
@@ -13,6 +12,12 @@ interface ErrorBody {
   error: {
     code: number;
     message: string;
+    errors: [
+      {
+        domain: string;
+        reason: string;
+      }
+    ];
   };
 }
 
@@ -21,8 +26,8 @@ export class CalendarAPI extends API {
 
   protected async handleError(response: Response) {
     const body: ErrorBody = await response.json();
-    const error = new CalendarError(body.error.message, body.error.code);
-    if (error.code === 403 || error.code === 408 || error.code === 429 || error.code >= 500) {
+    const error = new CalendarError(body.error.message, body.error.code, body.error.errors[0].reason);
+    if (error.code === 408 || error.code === 429 || error.code >= 500) {
       return error;
     } else {
       throw error;

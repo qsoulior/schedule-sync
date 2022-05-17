@@ -91,7 +91,11 @@ export function useGoogleCalendar(): CalendarContext {
     parsedCount.value = calendarEvents.length;
 
     const calendar = await createCalendar(group);
-    await createEvents(calendarEvents, calendar.id);
+    try {
+      await createEvents(calendarEvents, calendar.id);
+    } catch (error) {
+      await calendarAPI.value?.deleteCalendar(calendar.id);
+    }
   }
 
   return {
