@@ -13,7 +13,7 @@ export function useScheduleFetcher(): FetcherContext {
 
   onMounted(async () => {
     try {
-      const response = await fetch("https://schdl.herokuapp.com/api/info", {
+      const response = await fetch(import.meta.env.VITE_API_URL + "/info", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -40,7 +40,7 @@ export function useScheduleFetcher(): FetcherContext {
       return cachedSchedule;
     }
 
-    const response = await fetch(`https://schdl.herokuapp.com/api/schedules?group=${group}&newest=1`, {
+    const response = await fetch(import.meta.env.VITE_API_URL + `/schedules?group=${group}&newest=1`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });

@@ -22,8 +22,4 @@ useGoogleClient();
 
 <style>
 @import url("@/assets/base.css");
-
-#app {
-  font-weight: normal;
-}
 </style>
