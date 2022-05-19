@@ -77,8 +77,6 @@ async function syncSchedule(group: string): Promise<void> {
       <IconCalendar class="h-5 w-5 dark:stroke-sky-300 stroke-sky-400" />
       <div>Расписания ({{ filteredSchedulesInfo.length }}/{{ schedulesInfo.length }})</div>
     </div>
-    {{ context.parsedCount }}
-    {{ context.createdCount }}
     <form class="mb-5 w-full" @submit.prevent>
       <BaseInput
         class="w-full"
@@ -91,7 +89,7 @@ async function syncSchedule(group: string): Promise<void> {
     <div v-if="statusMessage === undefined">
       <div v-if="filteredSchedulesInfo.length > 0" class="flex flex-wrap gap-3">
         <BaseButton
-          class="px-4 py-2 flex-1"
+          class="px-4 py-2 flex-auto"
           v-for="schedule of filteredSchedulesInfo"
           :key="schedule.group"
           @click="syncSchedule(schedule.group)"

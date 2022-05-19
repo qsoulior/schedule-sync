@@ -20,6 +20,6 @@ const percentage = computed<number>(() => Math.round(props.percentage));
         :style="{ width: percentage + '%' }"
       ></div>
     </div>
-    <div>{{ percentage }}%</div>
+    <div class="w-11">{{ percentage }}%</div>
   </div>
 </template>
