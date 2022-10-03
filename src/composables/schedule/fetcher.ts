@@ -40,7 +40,7 @@ export function useScheduleFetcher(): FetcherContext {
       return cachedSchedule;
     }
 
-    const response = await fetch(import.meta.env.VITE_API_URL + `/schedules?group=${group}&newest=1`, {
+    const response = await fetch(import.meta.env.VITE_API_URL + `/schedules?group=${group}&latest=1`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
